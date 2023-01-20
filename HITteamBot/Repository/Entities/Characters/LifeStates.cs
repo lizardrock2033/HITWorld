@@ -6,8 +6,8 @@ namespace HITteamBot.Repository.Entities.Characters
 {
     public enum LifeStates
     {
-        Dead,
         Alive,
+        Dead,
         Unconscious
     }
 }

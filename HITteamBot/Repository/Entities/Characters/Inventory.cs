@@ -1,6 +1,7 @@
-﻿using HITteamBot.Repository.Entities.Items.Consumables;
-using HITteamBot.Repository.Entities.Items.Currency;
-using HITteamBot.Repository.Links.Images.Items.Ammo;
+﻿using HITteamBot.Repository.Entities.Items.Ammo;
+using HITteamBot.Repository.Entities.Items.Chemicals;
+using HITteamBot.Repository.Entities.Items.Equipment;
+using HITteamBot.Repository.Entities.Items.Junk;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -9,9 +10,12 @@ namespace HITteamBot.Repository.Entities.Characters
 {
     public class Inventory
     {
-        public Coins Coins { get; set; }
-        public Crystals Crystals { get; set; }
-        public Potions Potions { get; set; }
-        public Arrows Arrows { get; set; }
+        public long Cups { get; set; }
+        public Chemicals Chemicals { get; set; }
+        public Ammo Ammo { get; set; }
+        public Junk Junk { get; set; }
+        public List<Weapon> Weapons { get; set; }
+        public List<Armor> Armor { get; set; }
+        public List<Clothes> Clothes { get; set; }
     }
 }

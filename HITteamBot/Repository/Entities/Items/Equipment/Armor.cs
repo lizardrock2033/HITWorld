@@ -2,10 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace HITteamBot.Repository.Entities.Characters.Classes
+namespace HITteamBot.Repository.Entities.Items.Equipment
 {
-    class Human
+    public class Armor
     {
-        
     }
 }

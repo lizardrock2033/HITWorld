@@ -17,7 +17,6 @@ using System.Text;
 using System.Linq;
 using HITteamBot.Repository.Controllers;
 using HITteamBot.Repository.Controllers.Characters;
-using HITteamBot.Repository.Entities.Characters.Races;
 
 namespace HITteamBot
 {
@@ -29,8 +28,8 @@ namespace HITteamBot
         public static readonly string UsersDirectory = DataDirectory + @"\Users";
         public static readonly string WorldDirectory = DataDirectory + @"\World";
         public static readonly string PlayersDirectory = WorldDirectory + @"\Players";
-        public static readonly string RacesDirectory = WorldDirectory + @"\Races";
-        public static readonly string ClassesDirectory = WorldDirectory + @"\Classes";
+        public static readonly string PerksDirectory = WorldDirectory + @"\Perks";
+        public static readonly string ActionsDirectory = WorldDirectory + @"\Actions";
         public static readonly string ItemsDirectory = WorldDirectory + @"\Items";
         static ITelegramBotClient bot = new TelegramBotClient("5643667905:AAGeZiUGhEGUP9cAXEU7Llx9Bk6UvfuxCgc");
 
@@ -79,23 +78,31 @@ namespace HITteamBot
                             Menu(botClient, message.Chat.Id, cancellationToken);
                             return;
                         case "new":
-                            string[] strings = message.Text.Replace("/new", "").Replace("@HIT_team_bot", "").Split(new char[] { ' ' });
-                            CharactersController.CreateNewCharacter(botClient, message.Chat, message.From.Username, strings[1], Int16.Parse(strings[2]), strings.Length > 2 ? string.Join(' ', strings[3..]) : "", cancellationToken);
+                            _ = botClient.SendTextMessageAsync(message.Chat.Id, await CharactersController.CreateNewCharacter(message.From.Username + message.Text.Replace("/new", "").Replace("@HIT_team_bot", "")));
                             return;
-                        case "addrace":
+                        case "newperk":
                             if (message.From.Username == "Lizardrock")
                             {
                                 _ = botClient.DeleteMessageAsync(message.Chat.Id, message.MessageId - 1, cancellationToken);
-                                _ = botClient.SendTextMessageAsync(message.Chat.Id, await RaceController.AddNewRace(message.Text.Replace("/addRace", "").Replace("@HIT_team_bot", "")));
+                                _ = botClient.SendTextMessageAsync(message.Chat.Id, await PerksController.AddNewPerk(message.Text.Replace("/newPerk", "").Replace("@HIT_team_bot", "")));
                             }
                             else
                                 _ = botClient.SendTextMessageAsync(message.Chat.Id, "У вас нет прав (на это тоже)");
                             return;
-                        case "addraceability":
+                        case "newaction":
                             if (message.From.Username == "Lizardrock")
                             {
                                 _ = botClient.DeleteMessageAsync(message.Chat.Id, message.MessageId - 1, cancellationToken);
-                                _ = botClient.SendTextMessageAsync(message.Chat.Id, await RaceController.SetRaceAbility(message.Text.Replace("/addRaceAbility", "").Replace("@HIT_team_bot", "")));
+                                _ = botClient.SendTextMessageAsync(message.Chat.Id, await PerksController.AddNewAction(message.Text.Replace("/newAction", "").Replace("@HIT_team_bot", "")));
+                            }
+                            else
+                                _ = botClient.SendTextMessageAsync(message.Chat.Id, "У вас нет прав (на это тоже)");
+                            return;
+                        case "addperk":
+                            if (message.From.Username == "Lizardrock")
+                            {
+                                _ = botClient.DeleteMessageAsync(message.Chat.Id, message.MessageId - 1, cancellationToken);
+                                _ = botClient.SendTextMessageAsync(message.Chat.Id, await PerksController.AddPerkToCharacter(message.Text.Replace("/addPerk", "").Replace("@HIT_team_bot", "")));
                             }
                             else
                                 _ = botClient.SendTextMessageAsync(message.Chat.Id, "У вас нет прав (на это тоже)");
@@ -112,37 +119,18 @@ namespace HITteamBot
                     string callback = update.CallbackQuery.Data;
                     Chat chat = update.CallbackQuery.Message.Chat;
 
-                    if (callback.Contains("ContinueWith"))
-                    {
-                        CharactersController.ContinueJourneyWithCharacter(botClient, update.CallbackQuery.Message.Chat.Id, update.CallbackQuery.From.Username, callback.Replace("ContinueWith", ""), cancellationToken);
-                        return;
-                    }
-
-                    if (callback.Contains("SetRace"))
-                    {
-                        CharacterRaces race = (CharacterRaces)Enum.Parse(typeof(CharacterRaces), callback.Replace("SetRace", ""));
-                        _ = botClient.SendTextMessageAsync(chat.Id, Dictionaries.GetRace(race) + "...");
-                        CharactersController.SetCharacterRace(botClient, chat.Id, update.CallbackQuery.From.Username, "name", race, cancellationToken);
-                        return;
-                    }
-
-                    if (callback.Contains("SetClass"))
-                    {
-                        CharactersController.SetCharacterClass(botClient, chat.Id, update.CallbackQuery.From.Username, callback.Replace("SetClass", ""), cancellationToken);
-                        return;
-                    }
-
                     switch (callback)
                     {
                         case "NewCharacter":
                             _ = botClient.DeleteMessageAsync(chat.Id, update.CallbackQuery.Message.MessageId, cancellationToken);
                             _ = botClient.DeleteMessageAsync(chat.Id, update.CallbackQuery.Message.MessageId - 1, cancellationToken);
-                            await botClient.SendTextMessageAsync(chat.Id, "Придумайте персонажу имя, возраст и предисторию (по желанию) и начните сообщение с /new.\r\n\r\nПример:\r\n/new Гэндальф 413 Был послан богами чтобы навести порядок в Средиземье...");
+                            await botClient.SendTextMessageAsync(chat.Id, "Придумайте персонажу имя, возраст и пол и начните сообщение с /new.\r\n\r\n" +
+                                                                            "Пример:\r\n/new Глория 34 женский");
                             return;
-                        case "Characters":
+                        case "Character":
                             _ = botClient.DeleteMessageAsync(chat.Id, update.CallbackQuery.Message.MessageId, cancellationToken);
                             _ = botClient.DeleteMessageAsync(chat.Id, update.CallbackQuery.Message.MessageId - 1, cancellationToken);
-                            CharactersController.GetUserCharacters(botClient, chat, update.CallbackQuery.From.Username, cancellationToken);
+                            //CharactersController.GetUserCharacters(botClient, chat, update.CallbackQuery.From.Username, cancellationToken);
                             return;
 
                         // Админка
@@ -156,20 +144,20 @@ namespace HITteamBot
                             else
                                 _ = botClient.SendTextMessageAsync(chat.Id, "У вас нет прав (на настройку тоже)");
                             return;
-                        case "NewRace":
+                        case "NewPerk":
                             if (update.CallbackQuery.From.Username == "Lizardrock")
                             {
                                 _ = botClient.DeleteMessageAsync(chat.Id, update.CallbackQuery.Message.MessageId, cancellationToken);
-                                _ = botClient.SendTextMessageAsync(chat.Id, "/addRace имя сил лвк вын инт мдр хар хп мп вын");
+                                _ = botClient.SendTextMessageAsync(chat.Id, "/newPerk название ключевой_аттрибут стоимость тип описание");
                             }
                             else
                                 _ = botClient.SendTextMessageAsync(chat.Id, "У вас нет прав (на это тоже)");
                             return;
-                        case "AddRaceAbility":
+                        case "NewAction":
                             if (update.CallbackQuery.From.Username == "Lizardrock")
                             {
                                 _ = botClient.DeleteMessageAsync(chat.Id, update.CallbackQuery.Message.MessageId, cancellationToken);
-                                _ = botClient.SendTextMessageAsync(chat.Id, "/addRaceAbility имя_расы название 100 описание");
+                                _ = botClient.SendTextMessageAsync(chat.Id, "/newAction название_воздействия цель тип сила описание");
                             }
                             else
                                 _ = botClient.SendTextMessageAsync(chat.Id, "У вас нет прав (на это тоже)");
@@ -194,8 +182,8 @@ namespace HITteamBot
             if (!Directory.Exists(UsersDirectory)) Directory.CreateDirectory(UsersDirectory);
             if (!Directory.Exists(WorldDirectory)) Directory.CreateDirectory(WorldDirectory);
             if (!Directory.Exists(PlayersDirectory)) Directory.CreateDirectory(PlayersDirectory);
-            if (!Directory.Exists(RacesDirectory)) Directory.CreateDirectory(RacesDirectory);
-            if (!Directory.Exists(ClassesDirectory)) Directory.CreateDirectory(ClassesDirectory);
+            if (!Directory.Exists(PerksDirectory)) Directory.CreateDirectory(PerksDirectory);
+            if (!Directory.Exists(ActionsDirectory)) Directory.CreateDirectory(ActionsDirectory);
             if (!Directory.Exists(ItemsDirectory)) Directory.CreateDirectory(ItemsDirectory);
         }
 
@@ -219,7 +207,7 @@ namespace HITteamBot
                     new[]
                     {
                         InlineKeyboardButton.WithCallbackData("Создать персонажа", MainMenu.NewCharacter.ToString()),
-                        InlineKeyboardButton.WithCallbackData("Мои персонажи", MainMenu.Characters.ToString())
+                        InlineKeyboardButton.WithCallbackData("Мой персонаж", MainMenu.Character.ToString())
                     },
                     new[]
                     {
@@ -245,12 +233,12 @@ namespace HITteamBot
                 {
                     new[]
                     {
-                        InlineKeyboardButton.WithCallbackData("Создать расу", SettingsMenu.NewRace.ToString()),
-                        InlineKeyboardButton.WithCallbackData("Создать класс", SettingsMenu.NewClass.ToString())
+                        InlineKeyboardButton.WithCallbackData("Создать перк", SettingsMenu.NewPerk.ToString()),
+                        InlineKeyboardButton.WithCallbackData("Создать воздействие", SettingsMenu.NewAction.ToString())
                     },
                     new[]
                     {
-                        InlineKeyboardButton.WithCallbackData("Добавить расовый навык", SettingsMenu.AddRaceAbility.ToString())
+                        InlineKeyboardButton.WithCallbackData("Добавить че нибудь", "s")
                     }
                 });
 
@@ -272,15 +260,15 @@ namespace HITteamBot
     enum MainMenu
     {
         NewCharacter,
-        Characters,
+        Character,
         Settings,
         Info
     }
 
     enum SettingsMenu
     {
-        NewRace,
-        NewClass,
-        AddRaceAbility
+        NewPerk,
+        NewAction,
+        AddActionToPerk
     }
 }

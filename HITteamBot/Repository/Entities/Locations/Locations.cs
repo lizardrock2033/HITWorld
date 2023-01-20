@@ -4,13 +4,13 @@ using System.Text;
 
 namespace HITteamBot.Repository.Entities.Locations
 {
-    public enum Locations
+    public enum LocationTypes
     {
+        Settlement,
+        City,
         Forest,
-        Village,
-        River,
         Plains,
-        Castle,
-        City
+        Ruins,
+        Road
     }
 }

@@ -1,11 +1,9 @@
 ﻿using HITteamBot.Repository.Entities.Characters;
-using HITteamBot.Repository.Entities.Characters.Classes;
-using HITteamBot.Repository.Entities.Characters.Races;
-using HITteamBot.Repository.Entities.Items.Consumables;
-using HITteamBot.Repository.Entities.Items.Currency;
 using HITteamBot.Repository.Entities.Items.Equipment;
+using HITteamBot.Repository.Entities.Items.Chemicals;
+using HITteamBot.Repository.Entities.Items.Ammo;
+using HITteamBot.Repository.Entities.Items.Junk;
 using HITteamBot.Repository.Entities.Locations;
-using HITteamBot.Repository.Links.Images.Items.Ammo;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -16,120 +14,98 @@ using System.Threading;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
+using System.Threading.Tasks;
 
 namespace HITteamBot.Repository.Controllers.Characters
 {
     public class CharactersController
     {
-        public static async void CreateNewCharacter(ITelegramBotClient botClient, Chat chat, string username, string name, short age, string story, CancellationToken cancellationToken)
+        public static async Task<string> CreateNewCharacter(string query)
         {
             try
             {
-                string userDirectory = Program.GetUserDirectory(username);
-                string userCharacterDirectory = userDirectory + $"\\Characters";
-                string charDirectory = userCharacterDirectory + $"\\{name}";
+                string[] strings = query.Trim().Split(new char[] { ' ' });
+                string userDirectory = Program.GetUserDirectory(strings[0]);
+                string userCharacterDirectory = userDirectory + $"\\Character";
                 if (!Directory.Exists(userDirectory)) Directory.CreateDirectory(userDirectory);
                 if (!Directory.Exists(userCharacterDirectory)) Directory.CreateDirectory(userCharacterDirectory);
-                if (!Directory.Exists(charDirectory)) Directory.CreateDirectory(charDirectory);
 
                 Character newCharacter = new Character()
                 {
-                    User = username,
-                    Name = name,
-                    Age = age,
-                    Story = story,
+                    User = strings[0],
+                    Name = strings[1],
+                    Age = Byte.Parse(strings[2]),
+                    Gender = strings[3],
                     Level = 1,
-                    CurrentLocation = Locations.Village,
+                    CurrentLocationType = LocationTypes.Settlement,
+                    LifeState = LifeStates.Alive,
+                    Activity = Activities.Waiting,
                     IsActive = true,
                     Equipment = new Equipment(),
-                    Inventory = new Inventory() { Coins = new Coins() { Copper = 15 }, Crystals = new Crystals(), Potions = new Potions(), Arrows = new Arrows() }
+                    Inventory = new Inventory()
+                    {
+                        Cups = 50,
+                        Chemicals = new Chemicals()
+                        {
+                            Stimpacks = new List<Stimpack>(),
+                            Buffouts = new List<Buffout>(),
+                            Mentats = new List<Mentats>(),
+                            Psyhos = new List<Psyho>(),
+                            RadAways = new List<RadAway>(),
+                            RadXes = new List<RadX>()
+                        },
+                        Ammo = new Ammo()
+                        {
+                            Bullets = new List<Bullets>(),
+                            Battaries = new List<Battaries>(),
+                            Rockets = new List<Rockets>(),
+                            Grenades = new List<Grenades>()
+                        },
+                        Junk = new Junk()
+                        {
+
+                        },
+                        Weapons = new List<Weapon>(),
+                        Armor = new List<Armor>(),
+                        Clothes = new List<Clothes>()
+                    }
                 };
 
-                System.IO.File.WriteAllText(charDirectory + $@"\{name}.json", JsonConvert.SerializeObject(newCharacter));
+                Task task = Task.Factory.StartNew(() => { System.IO.File.WriteAllText(userCharacterDirectory + $@"\{strings[1]}.json", JsonConvert.SerializeObject(newCharacter)); });
+                await task;
+                return $"Персонаж {strings[1]} создан!";
 
-                InlineKeyboardMarkup inlineKeyboard = new InlineKeyboardMarkup(new[]
-                {
-                    new[]
-                    {
-                        InlineKeyboardButton.WithCallbackData("Человек", $"SetRace{CharacterRaces.Human}"),
-                        InlineKeyboardButton.WithCallbackData("Воин", $"SetClass{CharacterClasses.Warrior}")
-                    },
-                    new[] {
-                        InlineKeyboardButton.WithCallbackData("Эльф", $"SetRace{CharacterRaces.Elf}"),
-                        InlineKeyboardButton.WithCallbackData("Убийца", $"SetClass{CharacterClasses.Assassin}")
-                    },
-                    new[] {
-                        InlineKeyboardButton.WithCallbackData("Дворф", $"SetRace{CharacterRaces.Dwarf}"),
-                        InlineKeyboardButton.WithCallbackData("Лучник", $"SetClass{CharacterClasses.Archer}")
-                    },
-                    new[] {
-                        InlineKeyboardButton.WithCallbackData("Орк", $"SetRace{CharacterRaces.Orc}"),
-                        InlineKeyboardButton.WithCallbackData("Маг", $"SetClass{CharacterClasses.Mage}")
-                    },
-                    new[] {
-                        InlineKeyboardButton.WithCallbackData("Людоящер", $"SetRace{CharacterRaces.Lizardman}"),
-                        InlineKeyboardButton.WithCallbackData("Призыватель", $"SetClass{CharacterClasses.Summoner}")
-                    },
-                    new[] {
-                        InlineKeyboardButton.WithCallbackData("Подтвердить", $"SaveRaceAndClass{name}")
-                    }
-                });
-                await botClient.SendTextMessageAsync(chatId: chat.Id, text: $"Персонаж {name} создан! Осталось только выбрать расу и класс!", replyMarkup: inlineKeyboard, cancellationToken: cancellationToken);
+                //InlineKeyboardMarkup inlineKeyboard = new InlineKeyboardMarkup(new[]
+                //{
+                //    new[]
+                //    {
+                //        InlineKeyboardButton.WithCallbackData("Человек", $"SetRace"),
+                //        InlineKeyboardButton.WithCallbackData("Воин", $"SetClass")
+                //    },
+                //    new[] {
+                //        InlineKeyboardButton.WithCallbackData("Эльф", $"SetRace"),
+                //        InlineKeyboardButton.WithCallbackData("Убийца", $"SetClass")
+                //    },
+                //    new[] {
+                //        InlineKeyboardButton.WithCallbackData("Дворф", $"SetRace"),
+                //        InlineKeyboardButton.WithCallbackData("Лучник", $"SetClass")
+                //    },
+                //    new[] {
+                //        InlineKeyboardButton.WithCallbackData("Орк", $"SetRace"),
+                //        InlineKeyboardButton.WithCallbackData("Маг", $"SetClass")
+                //    },
+                //    new[] {
+                //        InlineKeyboardButton.WithCallbackData("Людоящер", $"SetRace"),
+                //        InlineKeyboardButton.WithCallbackData("Призыватель", $"SetClass")
+                //    },
+                //    new[] {
+                //        InlineKeyboardButton.WithCallbackData("Подтвердить", $"SaveRaceAndClass{name}")
+                //    }
+                //});
             }
             catch (Exception)
             {
-
-            }
-        }
-
-        public static async void SetCharacterRace(ITelegramBotClient botClient, long chatId, string username, string name, CharacterRaces race, CancellationToken cancellationToken)
-        {
-
-        }
-
-        public static async void SetCharacterClass(ITelegramBotClient botClient, long chatId, string username, string name, CancellationToken cancellationToken)
-        {
-
-        }
-
-        public static async void GetUserCharacters(ITelegramBotClient botClient, Chat chat, string username, CancellationToken cancellationToken)
-        {
-            try
-            {
-                string userCharactersDirectory = Program.GetUserDirectory(username) + $@"\Characters";
-                if (Directory.Exists(userCharactersDirectory))
-                {
-                    string[] characters = Directory.GetDirectories(userCharactersDirectory);
-                    InlineKeyboardButton[][] keyboardButtons = new InlineKeyboardButton[characters.Length][];
-
-                    for (int i = 0; i < characters.Length; i++)
-                    {
-                        string charPath = Directory.GetFiles(characters[i]).FirstOrDefault();
-                        Character character = JsonConvert.DeserializeObject<Character>(System.IO.File.ReadAllText(charPath));
-                        keyboardButtons[i] = new[] { InlineKeyboardButton.WithCallbackData($"{character.Name}", $"{character.Name}") };
-                    }
-
-                    InlineKeyboardMarkup inlineKeyboard = new InlineKeyboardMarkup(keyboardButtons);
-
-                    await botClient.SendTextMessageAsync(
-                                chatId: chat.Id,
-                                text: "Ваши персонажи:",
-                                replyMarkup: inlineKeyboard,
-                                cancellationToken: cancellationToken);
-                }
-                else if (!Directory.Exists(userCharactersDirectory) || Directory.GetDirectories(userCharactersDirectory).Length == 0)
-                {
-                    InlineKeyboardMarkup inlineKeyboard = new InlineKeyboardMarkup(new[] { InlineKeyboardButton.WithCallbackData("Создать персонажа", MainMenu.NewCharacter.ToString()) });
-                    await botClient.SendTextMessageAsync(
-                                chatId: chat.Id,
-                                text: "У вас нет персонажей!",
-                                replyMarkup: inlineKeyboard,
-                                cancellationToken: cancellationToken);
-                }
-            }
-            catch (Exception)
-            {
-
+                return "Ошибка";
             }
         }
 
@@ -137,20 +113,17 @@ namespace HITteamBot.Repository.Controllers.Characters
         {
             try
             {
-                string characterPath = Program.GetUserDirectory(username) + $@"\Characters\{name}\{name}.json";
+                string characterPath = Program.GetUserDirectory(username) + $@"\Character\{name}.json";
                 if (System.IO.File.Exists(characterPath))
                 {
                     Character character = JsonConvert.DeserializeObject<Character>(System.IO.File.ReadAllText(characterPath));
                     string info = $"Имя персонажа: >>> {character.Name}\r\n" +
                         $"Возраст:   >>>   {character.Age}\r\n" +
-                        $"Раса:   >>>   {character.Race.ToString()}\r\n" +
-                        $"Класс:   >>>   {character.Class.ToString()}\r\n" +
                         $"Уровень:   >>>   {character.Level}\r\n" +
-                        $"Текущая локация:   >>>   {character.CurrentLocation.ToString()}\r\n\r\n" +
-                        $"{character.Story}";
+                        $"Текущая локация:   >>>   {character.CurrentLocationType.ToString()}\r\n";
 
-                    InlineKeyboardMarkup inlineKeyboard = new InlineKeyboardMarkup(InlineKeyboardButton.WithCallbackData($"Продолжить за {character.Name}", $"ContinueWith{character.Name}"));
-                    await botClient.SendTextMessageAsync(chatId: chatId, text: info, replyMarkup: inlineKeyboard, cancellationToken: cancellationToken);
+                    //InlineKeyboardMarkup inlineKeyboard = new InlineKeyboardMarkup(InlineKeyboardButton.WithCallbackData($"Продолжить за ", $"ContinueWith"));
+                    await botClient.SendTextMessageAsync(chatId: chatId, text: info, /*replyMarkup: inlineKeyboard,*/ cancellationToken: cancellationToken);
                 }
             }
             catch (Exception)
@@ -164,7 +137,7 @@ namespace HITteamBot.Repository.Controllers.Characters
             Character character = new Character();
             try
             {
-                string characterPath = Program.GetUserDirectory(username) + $@"\Characters\{charactersName}\{charactersName}.json";
+                string characterPath = Program.GetUserDirectory(username) + $@"\Character\{charactersName}.json";
                 if (System.IO.File.Exists(characterPath))
                 {
                     character = JsonConvert.DeserializeObject<Character>(System.IO.File.ReadAllText(characterPath));
@@ -181,7 +154,7 @@ namespace HITteamBot.Repository.Controllers.Characters
         {
             try
             {
-                string characterPath = Program.GetUserDirectory(character.User) + $@"\Characters\{character.Name}\{character.Name}.json";
+                string characterPath = Program.GetUserDirectory(character.User) + $@"\Character\{character.Name}.json";
                 if (System.IO.File.Exists(characterPath))
                 {
                     System.IO.File.WriteAllText(characterPath, JsonConvert.SerializeObject(character));
@@ -206,19 +179,6 @@ namespace HITteamBot.Repository.Controllers.Characters
                 return false;
             }
             return true;
-        }
-
-        public static async void ContinueJourneyWithCharacter(ITelegramBotClient botClient, long chatId, string username, string name, CancellationToken cancellationToken)
-        {
-            try
-            {
-                InlineKeyboardMarkup inlineKeyboard = new InlineKeyboardMarkup(InlineKeyboardButton.WithCallbackData($"Классно!", $"soska"));
-                await botClient.SendTextMessageAsync(chatId: chatId, text: $"Продолжаем путешествие за {name}!", replyMarkup: inlineKeyboard, cancellationToken: cancellationToken);
-            }
-            catch (Exception)
-            {
-
-            }
         }
     }
 }
