@@ -13,6 +13,7 @@ namespace HITteamBot.Repository.Entities.Characters
         public short Intellegence { get; set; }
         public short Agility { get; set; }
         public short Luck { get; set; }
+        public bool IsSet { get; set; }
     }
 
     public enum SPECIALs

@@ -14,9 +14,9 @@ namespace HITteamBot.Repository.Entities.Characters
         public string Name { get; set; }
         public byte Age { get; set; }
         public string Gender { get; set; }
+        public string Portrait { get; set; }
         public short Level { get; set; }
         public Characteristics Characteristics { get; set; }
-        public SPECIAL Attributes { get; set; }
         public List<Perk> Perks { get; set; }
         public Equipment Equipment { get; set; }
         public Inventory Inventory { get; set; }

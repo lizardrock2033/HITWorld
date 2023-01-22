@@ -91,7 +91,7 @@ namespace HITteamBot.Repository.Controllers.Characters
             {
                 Perk perkData = JsonConvert.DeserializeObject<Perk>(System.IO.File.ReadAllText(Program.PerksDirectory + $@"\{perk.Attribute.ToString()}\{perk.Name}.json"));
                 System.Reflection.PropertyInfo field = typeof(SPECIAL).GetProperty($"{perk.Attribute.ToString()}");
-                short value = (short)field.GetValue(character.Attributes);
+                short value = (short)field.GetValue(character.Characteristics.Attributes);
                 return character.Perks.Where(n => n.Name == perk.Name).Count() == 0 && value >= perk.Cost;
             }
             catch (Exception)
