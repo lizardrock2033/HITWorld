@@ -7,14 +7,9 @@ namespace HITteamBot.Repository.Controllers
 {
     public class ActionsController
     {
-        public static Timer SetTimer(TimerCallback timerCallback, object state, int dueTime, int period)
+        public static void Action(Object data)
         {
-            return new Timer(timerCallback, state, dueTime, period);
-        }
-
-        public static void Event(Object state)
-        {
-            Console.WriteLine(state.ToString());
+            string path = Program.ActionsDirectory + $@"\";
         }
     }
 }

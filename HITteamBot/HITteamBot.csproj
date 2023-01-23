@@ -6,33 +6,21 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="bin\**" />
     <Compile Remove="Repository\Controllers\Events\**" />
     <Compile Remove="Repository\Entities\Enemies\**" />
-    <Compile Remove="Repository\Links\Images\Items\Equipment\**" />
+    <EmbeddedResource Remove="bin\**" />
     <EmbeddedResource Remove="Repository\Controllers\Events\**" />
     <EmbeddedResource Remove="Repository\Entities\Enemies\**" />
-    <EmbeddedResource Remove="Repository\Links\Images\Items\Equipment\**" />
+    <None Remove="bin\**" />
     <None Remove="Repository\Controllers\Events\**" />
     <None Remove="Repository\Entities\Enemies\**" />
-    <None Remove="Repository\Links\Images\Items\Equipment\**" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="bin\Debug\netcoreapp3.1\Data\Assets\vaultboy.png" />
-    <Content Include="bin\Debug\netcoreapp3.1\Data\Users\Lizardrock\Character\Айрат.json" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="Telegram.Bot" Version="18.0.0" />
     <PackageReference Include="Telegram.Bot.Extensions.Polling" Version="1.0.2" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="bin\Debug\netcoreapp3.1\Data\World\Actions\" />
-    <Folder Include="bin\Debug\netcoreapp3.1\Data\World\Items\" />
-    <Folder Include="bin\Debug\netcoreapp3.1\Data\World\Perks\" />
-    <Folder Include="bin\Debug\netcoreapp3.1\Data\World\Players\" />
   </ItemGroup>
 
 </Project>

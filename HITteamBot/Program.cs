@@ -25,15 +25,13 @@ namespace HITteamBot
     {
         public static readonly string BaseDirectory = AppContext.BaseDirectory;
         public static readonly string DataDirectory = BaseDirectory + "Data";
-        public static readonly string AssetsDirectory = DataDirectory + @"\Assets";
-        public static readonly string UsersDirectory = DataDirectory + @"\Users";
-        public static readonly string WorldDirectory = DataDirectory + @"\World";
-        public static readonly string PlayersDirectory = WorldDirectory + @"\Players";
-        public static readonly string PerksDirectory = WorldDirectory + @"\Perks";
-        public static readonly string ActionsDirectory = WorldDirectory + @"\Actions";
-        public static readonly string ItemsDirectory = WorldDirectory + @"\Items";
+        public static readonly string ObjectsDirectory = DataDirectory + @"\Objects";
+        public static readonly string UsersDirectory = ObjectsDirectory + @"\Users";
+        public static readonly string PerksDirectory = ObjectsDirectory + @"\Perks";
+        public static readonly string ActionsDirectory = ObjectsDirectory + @"\Actions";
+        public static readonly string ItemsDirectory = ObjectsDirectory + @"\Items";
         static ITelegramBotClient bot = new TelegramBotClient("5643667905:AAGeZiUGhEGUP9cAXEU7Llx9Bk6UvfuxCgc");
-        public static List<EventsTimer> EventsTimers = new List<EventsTimer>();
+        public static List<EventsTimer> Events = new List<EventsTimer>();
         static void Main(string[] args)
         {
             try
@@ -87,21 +85,27 @@ namespace HITteamBot
                         case "аватар":
                             _ = botClient.SendTextMessageAsync(message.Chat.Id, await CharactersController.SetCharacterAvatar(message.From.Username + message.Text.Replace("/аватар", "").Replace($"@{botClient.GetMeAsync().Result.FirstName}", "")));
                             return;
+
+                        case "вылазка":
+                            _ = botClient.SendTextMessageAsync(message.Chat.Id, await CharactersController.SetCharacterAvatar(message.From.Username + message.Text.Replace("/вылазка", "").Replace($"@{botClient.GetMeAsync().Result.FirstName}", "")));
+                            return;
+
+
                         case "таймер":
                             string[] query = message.Text.Replace("/таймер", "").Replace($"@{botClient.GetMeAsync().Result.FirstName}", "").Trim().Split(new char[] { ' ' });
-                            TimerCallback timerCallback = new TimerCallback(ActionsController.Event);
-                            EventsTimers.Add(new EventsTimer()
+                            TimerCallback timerCallback = new TimerCallback(ActionsController.Action);
+                            Events.Add(new EventsTimer()
                             {
                                 Username = message.From.Username,
                                 TimerName = query[0],
-                                Timer = ActionsController.SetTimer(timerCallback, string.Join(' ', query[3..]), Int32.Parse(query[1]) * 1000, Int32.Parse(query[2]) * 1000)
+                                Timer = BaseController.SetTimer(timerCallback, string.Join(' ', query[3..]), Int32.Parse(query[1]) * 1000, Int32.Parse(query[2]) * 1000)
                             });
                             
                             return;
                         case "сбростаймер":
                             string[] query2 = message.Text.Replace("/сбростаймер", "").Replace($"@{botClient.GetMeAsync().Result.FirstName}", "").Trim().Split(new char[] { ' ' });
-                            EventsTimers.Where(s => s.TimerName == query2[0] && s.Username == message.From.Username).FirstOrDefault().Timer.Dispose();
-                            EventsTimers.Remove(EventsTimers.Where(s => s.TimerName == query2[0] && s.Username == message.From.Username).FirstOrDefault());
+                            Events.Where(s => s.TimerName == query2[0] && s.Username == message.From.Username).FirstOrDefault().Timer.Dispose();
+                            Events.Remove(Events.Where(s => s.TimerName == query2[0] && s.Username == message.From.Username).FirstOrDefault());
                             return;
 
                         // Админская настройка
@@ -199,10 +203,8 @@ namespace HITteamBot
         public static void CreateDirectories()
         {
             if (!Directory.Exists(DataDirectory)) Directory.CreateDirectory(DataDirectory);
-            if (!Directory.Exists(AssetsDirectory)) Directory.CreateDirectory(AssetsDirectory);
+            if (!Directory.Exists(ObjectsDirectory)) Directory.CreateDirectory(ObjectsDirectory);
             if (!Directory.Exists(UsersDirectory)) Directory.CreateDirectory(UsersDirectory);
-            if (!Directory.Exists(WorldDirectory)) Directory.CreateDirectory(WorldDirectory);
-            if (!Directory.Exists(PlayersDirectory)) Directory.CreateDirectory(PlayersDirectory);
             if (!Directory.Exists(PerksDirectory)) Directory.CreateDirectory(PerksDirectory);
             if (!Directory.Exists(ActionsDirectory)) Directory.CreateDirectory(ActionsDirectory);
             if (!Directory.Exists(ItemsDirectory)) Directory.CreateDirectory(ItemsDirectory);
@@ -217,7 +219,7 @@ namespace HITteamBot
         {
             try
             {
-                string logo = AssetsDirectory + @"\vaultboy.png";
+                string logo = "";
                 using (var stream = System.IO.File.Open(logo, FileMode.Open))
                 {
                     await botClient.SendStickerAsync(chatId, stream);
