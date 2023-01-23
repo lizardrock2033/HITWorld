@@ -25,6 +25,7 @@ namespace HITteamBot
     {
         public static readonly string BaseDirectory = AppContext.BaseDirectory;
         public static readonly string DataDirectory = BaseDirectory + "Data";
+        public static readonly string AssetsDirectory = DataDirectory + @"\Assets";
         public static readonly string ObjectsDirectory = DataDirectory + @"\Objects";
         public static readonly string UsersDirectory = ObjectsDirectory + @"\Users";
         public static readonly string PerksDirectory = ObjectsDirectory + @"\Perks";
@@ -203,6 +204,7 @@ namespace HITteamBot
         public static void CreateDirectories()
         {
             if (!Directory.Exists(DataDirectory)) Directory.CreateDirectory(DataDirectory);
+            if (!Directory.Exists(AssetsDirectory)) Directory.CreateDirectory(AssetsDirectory);
             if (!Directory.Exists(ObjectsDirectory)) Directory.CreateDirectory(ObjectsDirectory);
             if (!Directory.Exists(UsersDirectory)) Directory.CreateDirectory(UsersDirectory);
             if (!Directory.Exists(PerksDirectory)) Directory.CreateDirectory(PerksDirectory);
@@ -219,7 +221,7 @@ namespace HITteamBot
         {
             try
             {
-                string logo = "";
+                string logo = AssetsDirectory + @"\vaultboy.png";
                 using (var stream = System.IO.File.Open(logo, FileMode.Open))
                 {
                     await botClient.SendStickerAsync(chatId, stream);

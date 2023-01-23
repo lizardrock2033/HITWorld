@@ -6,12 +6,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Assets\**" />
     <Compile Remove="bin\**" />
     <Compile Remove="Repository\Controllers\Events\**" />
     <Compile Remove="Repository\Entities\Enemies\**" />
+    <EmbeddedResource Remove="Assets\**" />
     <EmbeddedResource Remove="bin\**" />
     <EmbeddedResource Remove="Repository\Controllers\Events\**" />
     <EmbeddedResource Remove="Repository\Entities\Enemies\**" />
+    <None Remove="Assets\**" />
     <None Remove="bin\**" />
     <None Remove="Repository\Controllers\Events\**" />
     <None Remove="Repository\Entities\Enemies\**" />
