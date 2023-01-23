@@ -17,6 +17,7 @@ using System.Text;
 using System.Linq;
 using HITteamBot.Repository.Controllers;
 using HITteamBot.Repository.Controllers.Characters;
+using HITteamBot.Repository.Entities.System;
 
 namespace HITteamBot
 {
@@ -32,7 +33,7 @@ namespace HITteamBot
         public static readonly string ActionsDirectory = WorldDirectory + @"\Actions";
         public static readonly string ItemsDirectory = WorldDirectory + @"\Items";
         static ITelegramBotClient bot = new TelegramBotClient("5643667905:AAGeZiUGhEGUP9cAXEU7Llx9Bk6UvfuxCgc");
-
+        public static List<EventsTimer> EventsTimers = new List<EventsTimer>();
         static void Main(string[] args)
         {
             try
@@ -74,24 +75,39 @@ namespace HITteamBot
                             Menu(botClient, message.Chat.Id, cancellationToken);
                             return;
                         case "menu":
-                            _ = botClient.DeleteMessageAsync(message.Chat.Id, message.MessageId, cancellationToken);
                             Menu(botClient, message.Chat.Id, cancellationToken);
                             return;
                         case "создать":
-                            _ = botClient.SendTextMessageAsync(message.Chat.Id, await CharactersController.CreateNewCharacter(message.From.Username + message.Text.Replace("/создать", "").Replace($"@{botClient.GetMeAsync().Result.FirstName}", "")));
+                            _ = botClient.SendTextMessageAsync(message.Chat.Id, await CharactersController.CreateNewCharacter(message.From.Username + message.Text.Replace("/создать", "").Replace($"@{botClient.GetMeAsync().Result.FirstName}", "")), Telegram.Bot.Types.Enums.ParseMode.Markdown);
                             return;
                         case "атрибуты":
-                            _ = botClient.SendTextMessageAsync(message.Chat.Id, await CharactersController.SetCharacterAttributes(message.From.Username + message.Text.Replace("/атрибуты", "").Replace($"@{botClient.GetMeAsync().Result.FirstName}", "")));                            
+                            InlineKeyboardMarkup newAvatar = new InlineKeyboardMarkup(new[] { InlineKeyboardButton.WithCallbackData("Новый аватар", MainMenu.Avatar.ToString()) });
+                            _ = botClient.SendTextMessageAsync(chatId: message.Chat.Id, text: await CharactersController.SetCharacterAttributes(message.From.Username + message.Text.Replace("/атрибуты", "").Replace($"@{botClient.GetMeAsync().Result.FirstName}", "")), Telegram.Bot.Types.Enums.ParseMode.Markdown, replyMarkup: newAvatar, cancellationToken: cancellationToken);
                             return;
                         case "аватар":
                             _ = botClient.SendTextMessageAsync(message.Chat.Id, await CharactersController.SetCharacterAvatar(message.From.Username + message.Text.Replace("/аватар", "").Replace($"@{botClient.GetMeAsync().Result.FirstName}", "")));
+                            return;
+                        case "таймер":
+                            string[] query = message.Text.Replace("/таймер", "").Replace($"@{botClient.GetMeAsync().Result.FirstName}", "").Trim().Split(new char[] { ' ' });
+                            TimerCallback timerCallback = new TimerCallback(ActionsController.Event);
+                            EventsTimers.Add(new EventsTimer()
+                            {
+                                Username = message.From.Username,
+                                TimerName = query[0],
+                                Timer = ActionsController.SetTimer(timerCallback, string.Join(' ', query[3..]), Int32.Parse(query[1]) * 1000, Int32.Parse(query[2]) * 1000)
+                            });
+                            
+                            return;
+                        case "сбростаймер":
+                            string[] query2 = message.Text.Replace("/сбростаймер", "").Replace($"@{botClient.GetMeAsync().Result.FirstName}", "").Trim().Split(new char[] { ' ' });
+                            EventsTimers.Where(s => s.TimerName == query2[0] && s.Username == message.From.Username).FirstOrDefault().Timer.Dispose();
+                            EventsTimers.Remove(EventsTimers.Where(s => s.TimerName == query2[0] && s.Username == message.From.Username).FirstOrDefault());
                             return;
 
                         // Админская настройка
                         case "newperk":
                             if (message.From.Username == "Lizardrock")
                             {
-                                _ = botClient.DeleteMessageAsync(message.Chat.Id, message.MessageId - 1, cancellationToken);
                                 _ = botClient.SendTextMessageAsync(message.Chat.Id, await PerksController.AddNewPerk(message.Text.Replace("/newPerk", "").Replace($"@{botClient.GetMeAsync().Result.FirstName}", "")));
                             }
                             else
@@ -100,7 +116,6 @@ namespace HITteamBot
                         case "newaction":
                             if (message.From.Username == "Lizardrock")
                             {
-                                _ = botClient.DeleteMessageAsync(message.Chat.Id, message.MessageId - 1, cancellationToken);
                                 _ = botClient.SendTextMessageAsync(message.Chat.Id, await PerksController.AddNewAction(message.Text.Replace("/newAction", "").Replace($"@{botClient.GetMeAsync().Result.FirstName}", "")));
                             }
                             else
@@ -109,7 +124,6 @@ namespace HITteamBot
                         case "addperk":
                             if (message.From.Username == "Lizardrock")
                             {
-                                _ = botClient.DeleteMessageAsync(message.Chat.Id, message.MessageId - 1, cancellationToken);
                                 _ = botClient.SendTextMessageAsync(message.Chat.Id, await PerksController.AddPerkToCharacter(message.Text.Replace("/addPerk", "").Replace($"@{botClient.GetMeAsync().Result.FirstName}", "")));
                             }
                             else
@@ -130,23 +144,25 @@ namespace HITteamBot
                     switch (callback)
                     {
                         case "NewCharacter":
-                            _ = botClient.DeleteMessageAsync(chat.Id, update.CallbackQuery.Message.MessageId, cancellationToken);
-                            _ = botClient.DeleteMessageAsync(chat.Id, update.CallbackQuery.Message.MessageId - 1, cancellationToken);
                             await botClient.SendTextMessageAsync(chat.Id, "Придумайте персонажу имя, возраст и пол и начните сообщение с /создать.\r\n\r\n" +
                                                                             "Пример:\r\n/создать Глория 34 женский");
                             return;
                         case "Character":
-                            _ = botClient.DeleteMessageAsync(chat.Id, update.CallbackQuery.Message.MessageId, cancellationToken);
-                            _ = botClient.DeleteMessageAsync(chat.Id, update.CallbackQuery.Message.MessageId - 1, cancellationToken);
-                            _ = botClient.SendTextMessageAsync(chat.Id, await CharactersController.GetCharacterInfo(update.CallbackQuery.From.Username), Telegram.Bot.Types.Enums.ParseMode.Markdown);
+                            InlineKeyboardMarkup newAvatar = new InlineKeyboardMarkup(new[] { InlineKeyboardButton.WithCallbackData("Новый аватар", MainMenu.Avatar.ToString()) });
+                            InlineKeyboardMarkup newCharacter = new InlineKeyboardMarkup(new[] { InlineKeyboardButton.WithCallbackData("Создать персонажа", MainMenu.NewCharacter.ToString()) });
+                            string charInfo = await CharactersController.GetCharacterInfo(update.CallbackQuery.From.Username);
+                            _ = botClient.SendTextMessageAsync(chatId: chat.Id, text: charInfo, Telegram.Bot.Types.Enums.ParseMode.Markdown, replyMarkup: (charInfo.Contains("не найден") ? newCharacter : newAvatar), cancellationToken: cancellationToken);
+                            return;
+                        case "Avatar":
+                            _ = botClient.SendTextMessageAsync(chat.Id, "Вы можете выбрать любой эмодзи в качестве аватара вашего персонажа. " +
+                                                                        "Для этого начните сообщение с /аватар и пришлите любой понравившийся эмодзи.\r\n\r\n" +
+                                                                        "Пример:\r\n/аватар 🧔🏻‍♀️");
                             return;
 
                         // Админка
                         case "Settings":
                             if (update.CallbackQuery.From.Username == "Lizardrock")
                             {
-                                _ = botClient.DeleteMessageAsync(chat.Id, update.CallbackQuery.Message.MessageId, cancellationToken);
-                                _ = botClient.DeleteMessageAsync(chat.Id, update.CallbackQuery.Message.MessageId - 1, cancellationToken);
                                 Settings(botClient, chat, cancellationToken);
                             }
                             else
@@ -155,7 +171,6 @@ namespace HITteamBot
                         case "NewPerk":
                             if (update.CallbackQuery.From.Username == "Lizardrock")
                             {
-                                _ = botClient.DeleteMessageAsync(chat.Id, update.CallbackQuery.Message.MessageId, cancellationToken);
                                 _ = botClient.SendTextMessageAsync(chat.Id, "/newPerk название ключевой_аттрибут стоимость тип описание");
                             }
                             else
@@ -164,7 +179,6 @@ namespace HITteamBot
                         case "NewAction":
                             if (update.CallbackQuery.From.Username == "Lizardrock")
                             {
-                                _ = botClient.DeleteMessageAsync(chat.Id, update.CallbackQuery.Message.MessageId, cancellationToken);
                                 _ = botClient.SendTextMessageAsync(chat.Id, "/newAction название_воздействия цель тип сила описание");
                             }
                             else
@@ -203,7 +217,7 @@ namespace HITteamBot
         {
             try
             {
-                string logo = AssetsDirectory + @"\hitWorldLogo.png";
+                string logo = AssetsDirectory + @"\vaultboy.png";
                 using (var stream = System.IO.File.Open(logo, FileMode.Open))
                 {
                     await botClient.SendStickerAsync(chatId, stream);
@@ -213,7 +227,6 @@ namespace HITteamBot
                 {
                     new[]
                     {
-                        InlineKeyboardButton.WithCallbackData("Создать персонажа", MainMenu.NewCharacter.ToString()),
                         InlineKeyboardButton.WithCallbackData("Мой персонаж", MainMenu.Character.ToString())
                     },
                     new[]
@@ -268,6 +281,7 @@ namespace HITteamBot
     {
         NewCharacter,
         Character,
+        Avatar,
         Settings,
         Info
     }

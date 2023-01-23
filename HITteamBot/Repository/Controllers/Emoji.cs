@@ -24,5 +24,7 @@ namespace HITteamBot.Repository.Controllers
         public readonly static string Alien = "👽";
         public readonly static string Bag = "🎒";
         public readonly static string Incognito = "👤";
+        public readonly static string Rosette = "🏵";
+        public readonly static string Exclamation = "❗️";
     }
 }

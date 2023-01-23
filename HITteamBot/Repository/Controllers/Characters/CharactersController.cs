@@ -29,6 +29,7 @@ namespace HITteamBot.Repository.Controllers.Characters
                 string userCharacterDirectory = userDirectory + $"\\Character";
                 if (!Directory.Exists(userDirectory)) Directory.CreateDirectory(userDirectory);
                 if (!Directory.Exists(userCharacterDirectory)) Directory.CreateDirectory(userCharacterDirectory);
+                if ((bool)GetCharacter(strings[0])?.IsActive) return "У вас уже есть персонаж";
 
                 Character newCharacter = new Character()
                 {
@@ -73,31 +74,28 @@ namespace HITteamBot.Repository.Controllers.Characters
 
                 if (response)
                 {
-                    return $"Персонаж {strings[1]} создан!\r\n" +
-                        "Теперь необходимо распределить очки характеристик.\r\n" +
-                        "Сейчас все ваши характеристики равны 1 и у вас есть 22 очка характеристик для распределения.\r\n" +
+                    return $"Персонаж {Emoji.Incognito} {strings[1]} создан!\r\n\r\n" +
+                        $"Теперь необходимо распределить {Emoji.Rosette} очки характеристик.\r\n" +
+                        "Сейчас все ваши характеристики равны 1 и у вас есть *22 очка характеристик* для распределения.\r\n\r\n" +
                         "Обратите внимание:\r\n" +
-                        "- Значения характеристик не могут стать выше 10 при распределении.\r\n" +
-                        "- Необходимо распределить сразу все 22 очка характеристик.\r\n" +
-                        "- В дальнейшем, при получении уровня, можно будет повышать характеристики (но не выше 10).\r\n" +
-                        "- Характеристики можно увеличить выше 10 при помощи предметов, химикатов и пр.\r\n\r\n" +
-                        "Описание характеристик:\r\n\r\n" +
-                        "- Сила (Strength) - переносимый вес, урон тяжелого оружия и урон в ближнем бою.\r\n\r\n" +
-                        "- Восприятие (Perception) - меткость и внимательность.\r\n\r\n" +
-                        "- Выносливость (Endurance) - здоровье и стойкость.\r\n\r\n" +
-                        "- Харизма (Charisma) - торговля и общение.\r\n\r\n" +
-                        "- Интеллект (Intellegence) - модификация оружия, получаемый опыт и крафт.\r\n\r\n" +
-                        "- Ловкость (Agility) - урон в дальнем бою, скрытность и очки действия (ОД).\r\n\r\n" +
-                        "- Удача (Luck) - криты, находимый хлам, везение.\r\n\r\n" +
-                        "Чтобы распределить очки характеристик, необходимо написать /атрибуты и указать необходимое количество вливаемых очков для каждой характеристики в указанном выше порядке.\r\n\r\n" +
+                        $"{Emoji.Exclamation} Значения характеристик не могут стать выше 10 при распределении.\r\n" +
+                        $"{Emoji.Exclamation} Необходимо распределить сразу все 22 очка характеристик.\r\n" +
+                        $"{Emoji.Exclamation} В дальнейшем, при получении уровня, можно будет повышать характеристики (но не выше 10).\r\n" +
+                        $"{Emoji.Exclamation} Характеристики можно увеличить выше 10 при помощи предметов, химикатов и пр.\r\n\r\n" +
+                        "Описание характеристик:\r\n" +
+                        $"{Emoji.Muscle} *Сила (Strength)* - переносимый вес, урон тяжелого оружия и урон в ближнем бою.\r\n" +
+                        $"{Emoji.Eye} *Восприятие (Perception)* - меткость и внимательность.\r\n" +
+                        $"{Emoji.Lungs} *Выносливость (Endurance)* - здоровье и стойкость.\r\n" +
+                        $"{Emoji.SpeakingHead} *Харизма (Charisma)* - торговля и общение.\r\n" +
+                        $"{Emoji.Brain} *Интеллект (Intellegence)* - модификация оружия, получаемый опыт и крафт.\r\n" +
+                        $"{Emoji.Leg} *Ловкость (Agility)* - урон в дальнем бою, скрытность и очки действия (ОД).\r\n" +
+                        $"{Emoji.Clover} *Удача (Luck)* - криты, находимый хлам, везение.\r\n\r\n" +
+                        "Чтобы распределить очки характеристик, необходимо написать /атрибуты и указать необходимое количество вливаемых очков для каждой характеристики *в указанном выше порядке*.\r\n\r\n" +
                         "Пример:\r\n" +
                         "/атрибуты 7 1 7 0 1 3 3";
                 }
-                else
-                {
-                    return "У вас уже есть персонаж";
-                }
-                
+
+                return "Ошибка";
 
                 //InlineKeyboardMarkup inlineKeyboard = new InlineKeyboardMarkup(new[]
                 //{
@@ -197,46 +195,19 @@ namespace HITteamBot.Repository.Controllers.Characters
                 Character character = GetCharacter(strings[0]);
                 if (character.IsActive)
                 {
-                    short sum = 0;
-                    for (int i = 1; i < 8; i++)
-                    {
-                        if (Int16.Parse(strings[i]) > 9) throw new Exception();
-                        sum += Int16.Parse(strings[i]);
-                    }
-                    if (sum != 22) throw new Exception();
+                    character.Avatar = strings[1];
 
-                    character.Characteristics = new Characteristics()
-                    {
-                        Attributes = new SPECIAL()
-                        {
-                            Strength = (short)(Int16.Parse(strings[1]) + 1),
-                            Perception = (short)(Int16.Parse(strings[2]) + 1),
-                            Endurance = (short)(Int16.Parse(strings[3]) + 1),
-                            Charisma = (short)(Int16.Parse(strings[4]) + 1),
-                            Intellegence = (short)(Int16.Parse(strings[5]) + 1),
-                            Agility = (short)(Int16.Parse(strings[6]) + 1),
-                            Luck = (short)(Int16.Parse(strings[7]) + 1)
-                        }
-                    };
-
-                    character.Characteristics.Health = 100 + 10 * character.Characteristics.Attributes.Endurance;
-                    character.Characteristics.ActionPoints = 100 + 10 * character.Characteristics.Attributes.Agility;
-                    character.Characteristics.WeightLimit = (short)(100 + 5 * character.Characteristics.Attributes.Strength);
-                    character.Characteristics.Experience = 0;
-                    character.Characteristics.NextLevelOn = 500;
-                    character.Characteristics.Rads = 0;
-
-                    if (SaveCharacter(character))
-                    {
-                        return await GetCharacterInfo(strings[0]);
-                    }
+                    bool isOK = false;
+                    Task task = Task.Factory.StartNew(() => { isOK = SaveCharacter(character); });
+                    await task;
+                    if (isOK) return "Аватар сохранён";
                     return "Ошибка";
                 }
                 else return "Персонаж не найден";
             }
             catch (Exception)
             {
-                return "Правильно распределите очки! 22 свободных очка характеристик, характеристики не могут превышать 10.";
+                return "Ошибка";
             }
         }
 
@@ -253,7 +224,7 @@ namespace HITteamBot.Repository.Controllers.Characters
                     string info = "Персонаж не найден";
                     if (character.IsActive)
                     {
-                        info = $"{(!string.IsNullOrEmpty(character.Portrait) ? character.Portrait : Emoji.Incognito)} *Имя:*   _{character.Name}_\r\n" +
+                        info = $"{(!string.IsNullOrEmpty(character.Avatar) ? character.Avatar : Emoji.Incognito)} *Имя:*   _{character.Name}_\r\n" +
                                 $"{Emoji.DNA} *Возраст:*   {character.Age}\r\n" +
                                 $"{(character.Gender.ToLower().Contains("женский") ? Emoji.WomanSign : Emoji.MenSign)} *Пол:*   _{character.Gender}_\r\n" +
                                 $"{Emoji.Star} *Уровень:*   _{character.Level} ({character.Characteristics.Experience}/{character.Characteristics.NextLevelOn})_\r\n\r\n" +
@@ -292,7 +263,7 @@ namespace HITteamBot.Repository.Controllers.Characters
                     {
                         charactersList.Add(JsonConvert.DeserializeObject<Character>(System.IO.File.ReadAllText(ch)));
                     }
-                    character = charactersList.Where(i => i.IsActive).FirstOrDefault();
+                    character = charactersList.Where(i => i.IsActive).FirstOrDefault() ?? new Character();
                 }
 
             }
@@ -308,7 +279,6 @@ namespace HITteamBot.Repository.Controllers.Characters
             try
             {
                 string characterPath = Program.GetUserDirectory(character.User) + $@"\Character\{character.Name}.json";
-                if (GetCharacter(character.User).IsActive) throw new Exception();
                 if (Directory.Exists(Program.GetUserDirectory(character.User) + $@"\Character\"))
                     System.IO.File.WriteAllText(characterPath, JsonConvert.SerializeObject(character));
             }
