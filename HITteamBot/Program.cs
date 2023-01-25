@@ -70,6 +70,7 @@ namespace HITteamBot
                 {
                     switch (message.Text.ToLower().Replace("/", "").Replace($"@{botClient.GetMeAsync().Result.FirstName.ToLower()}", "").Split(new char[] { ' ' })[0])
                     {
+                        // Стартовая часть
                         case "start":
                             Menu(botClient, message.Chat.Id, message.From.Username, cancellationToken);
                             return;
@@ -80,12 +81,13 @@ namespace HITteamBot
                             string charInfo = await CharactersController.GetCharacterInfo(message.From.Username);
                             if (charInfo.Contains("не найден"))
                             {
-                                InlineKeyboardMarkup newCharacter = new InlineKeyboardMarkup(new[] { InlineKeyboardButton.WithCallbackData("Создать персонажа", MainMenu.NewCharacter.ToString()) });
+                                InlineKeyboardMarkup newCharacter = new InlineKeyboardMarkup(new[] { InlineKeyboardButton.WithCallbackData("Создать персонажа", $"Main_{MainMenu.NewCharacter}") });
                                 _ = botClient.SendTextMessageAsync(chatId: message.Chat.Id, text: charInfo, Telegram.Bot.Types.Enums.ParseMode.Markdown, replyMarkup: newCharacter, cancellationToken: cancellationToken);
                             }
-                            else
-                                Play(botClient, message, charInfo, cancellationToken);
+                            else Play(botClient, message, charInfo, cancellationToken);
                             return;
+
+                        // Создание персонажа
                         case "создать":
                             _ = botClient.SendTextMessageAsync(message.Chat.Id, await CharactersController.CreateNewCharacter(message.From.Username + message.Text.Replace("/создать", "").Replace($"@{botClient.GetMeAsync().Result.FirstName}", "")), Telegram.Bot.Types.Enums.ParseMode.Markdown);
                             return;
@@ -96,25 +98,7 @@ namespace HITteamBot
                             _ = botClient.SendTextMessageAsync(message.Chat.Id, await CharactersController.SetCharacterAvatar(message.From.Username + message.Text.Replace("/аватар", "").Replace($"@{botClient.GetMeAsync().Result.FirstName}", "")));
                             return;
 
-
-                        //case "таймер":
-                        //    string[] query = message.Text.Replace("/таймер", "").Replace($"@{botClient.GetMeAsync().Result.FirstName}", "").Trim().Split(new char[] { ' ' });
-                        //    TimerCallback timerCallback = new TimerCallback(ActionsController.Action);
-                        //    Events.Add(new EventsTimer()
-                        //    {
-                        //        Username = message.From.Username,
-                        //        TimerName = query[0],
-                        //        Timer = BaseController.SetTimer(timerCallback, string.Join(' ', query[3..]), Int32.Parse(query[1]) * 1000, Int32.Parse(query[2]) * 1000)
-                        //    });
-
-                        //    return;
-                        //case "сбростаймер":
-                        //    string[] query2 = message.Text.Replace("/сбростаймер", "").Replace($"@{botClient.GetMeAsync().Result.FirstName}", "").Trim().Split(new char[] { ' ' });
-                        //    Events.Where(s => s.TimerName == query2[0] && s.Username == message.From.Username).FirstOrDefault().Timer.Dispose();
-                        //    Events.Remove(Events.Where(s => s.TimerName == query2[0] && s.Username == message.From.Username).FirstOrDefault());
-                        //    return;
-
-                        // Админская настройка
+                        // Настройка и создание элементов (с правами доступа)
                         case "newperk":
                             if (BaseController.CheckPermissions(message.From.Username, PermissionsType.Moderator).Result)
                                 _ = botClient.SendTextMessageAsync(message.Chat.Id, await PerksController.AddNewPerk(message.Text.Replace("/newPerk", "").Replace($"@{botClient.GetMeAsync().Result.FirstName}", "")));
@@ -143,56 +127,90 @@ namespace HITteamBot
 
                 if (update.Type == Telegram.Bot.Types.Enums.UpdateType.CallbackQuery)
                 {
-                    string callback = Regex.Replace(update.CallbackQuery.Data, "[0-9]", "");
-                    Chat chat = update.CallbackQuery.Message.Chat;
-                    switch (callback)
+                    Message callbackMessage = update.CallbackQuery.Message;
+                    string[] callback = update.CallbackQuery.Data.Split(new char[] { '_' });
+
+                    switch (callback[0])
                     {
-                        case "NewCharacter":
-                            await botClient.SendTextMessageAsync(chat.Id, "Придумайте персонажу имя, возраст и пол и начните сообщение с /создать.\r\n\r\n" +
-                                                                            "Пример:\r\n/создать Глория 34 женский");
-                            return;
-                        case "Character":
-                            string charInfo = await CharactersController.GetCharacterInfo(update.CallbackQuery.From.Username);
-                            if (charInfo.Contains("не найден"))
+                        // Создание и вызов персонажа
+                        case "Main":
+                            switch (callback[1])
                             {
-                                InlineKeyboardMarkup newCharacter = new InlineKeyboardMarkup(new[] { InlineKeyboardButton.WithCallbackData("Создать персонажа", MainMenu.NewCharacter.ToString()) });
-                                _ = botClient.SendTextMessageAsync(chatId: chat.Id, text: charInfo, Telegram.Bot.Types.Enums.ParseMode.Markdown, replyMarkup: newCharacter, cancellationToken: cancellationToken);
+                                case "NewCharacter":
+                                    await botClient.SendTextMessageAsync(callbackMessage.Chat.Id, "Придумайте персонажу имя, возраст и пол и начните сообщение с /создать.\r\n\r\n" +
+                                                                                    "Пример:\r\n/создать Глория 34 женский");
+                                    return;
+                                case "Character":
+                                    string charInfo = await CharactersController.GetCharacterInfo(update.CallbackQuery.From.Username);
+                                    if (charInfo.Contains("не найден"))
+                                    {
+                                        InlineKeyboardMarkup newCharacter = new InlineKeyboardMarkup(new[] { InlineKeyboardButton.WithCallbackData("Создать персонажа", $"Main_{MainMenu.NewCharacter}") });
+                                        _ = botClient.SendTextMessageAsync(chatId: callbackMessage.Chat.Id, text: charInfo, Telegram.Bot.Types.Enums.ParseMode.Markdown, replyMarkup: newCharacter, cancellationToken: cancellationToken);
+                                    }
+                                    else Play(botClient, update.CallbackQuery.Message, charInfo, cancellationToken);
+                                    return;
+                                case "CharacterSettings":
+                                    CharacterSettings(botClient, update.CallbackQuery.Message, cancellationToken);
+                                    return;
+                                case "Avatar":
+                                    _ = botClient.SendTextMessageAsync(callbackMessage.Chat.Id, "Вы можете выбрать любой эмодзи в качестве аватара вашего персонажа. " +
+                                                                                "Для этого начните сообщение с /аватар и пришлите любой понравившийся эмодзи.\r\n\r\n" +
+                                                                                "Пример:\r\n/аватар 🧔🏻‍♀️");
+                                    return;
+                                case "Back":
+                                    string backToInfo = await CharactersController.GetCharacterInfo(update.CallbackQuery.From.Username);
+                                    if (backToInfo.Contains("не найден"))
+                                    {
+                                        InlineKeyboardMarkup newCharacter = new InlineKeyboardMarkup(new[] { InlineKeyboardButton.WithCallbackData("Создать персонажа", $"Main_{MainMenu.NewCharacter}") });
+                                        _ = botClient.SendTextMessageAsync(chatId: callbackMessage.Chat.Id, text: backToInfo, Telegram.Bot.Types.Enums.ParseMode.Markdown, replyMarkup: newCharacter, cancellationToken: cancellationToken);
+                                    }
+                                    else Play(botClient, update.CallbackQuery.Message, backToInfo, cancellationToken);
+                                    return;
                             }
-                            else
-                                Play(botClient, update.CallbackQuery.Message, charInfo, cancellationToken);
-                            return;
-                        case "CharacterSettings":
-                            CharacterSettings(botClient, update.CallbackQuery.Message, cancellationToken);
-                            return;
-                        case "Avatar":
-                            _ = botClient.SendTextMessageAsync(chat.Id, "Вы можете выбрать любой эмодзи в качестве аватара вашего персонажа. " +
-                                                                        "Для этого начните сообщение с /аватар и пришлите любой понравившийся эмодзи.\r\n\r\n" +
-                                                                        "Пример:\r\n/аватар 🧔🏻‍♀️");
-                            return;
-                        case "ActionsList":
-                            ActionsListGet(botClient, update.CallbackQuery.Message, "Exploring", cancellationToken);
-                            return;
-                        case "StartAction":
-                            await botClient.SendTextMessageAsync(chat.Id, update.CallbackQuery.Data.Replace("StartAction", ""));
                             return;
 
-
-
-
-
-                        // Модератор + Администратор
-                        case "Settings":
-                            if (BaseController.CheckPermissions(update.CallbackQuery.From.Username, PermissionsType.Moderator).Result)
-                                Settings(botClient, chat, cancellationToken);
+                        // Геймплей
+                        case "Gameplay":
+                            switch (callback[1])
+                            {
+                                case "ActionsList":
+                                    ActionsListGet(botClient, update.CallbackQuery.Message, "Exploring", cancellationToken);
+                                    return;
+                                case "ActionInfo":
+                                    
+                                    return;
+                                case "StartAction":
+                                    await botClient.SendTextMessageAsync(callbackMessage.Chat.Id, update.CallbackQuery.Data.Replace("StartAction", ""));
+                                    return;
+                                case "Back":
+                                    ActionsListGet(botClient, update.CallbackQuery.Message, "Exploring", cancellationToken);
+                                    return;
+                            }
                             return;
-                        case "NewPerk":
-                            if (BaseController.CheckPermissions(update.CallbackQuery.From.Username, PermissionsType.Moderator).Result)
-                                _ = botClient.SendTextMessageAsync(chat.Id, "/newPerk название ключевой_аттрибут стоимость тип описание");
+
+                        // Системные настройки и заведение новых данных (с правами доступа)
+                        case "MainSettings":
+                            switch (callback[1])
+                            {
+                                case "Settings":
+                                    if (BaseController.CheckPermissions(update.CallbackQuery.From.Username, PermissionsType.Moderator).Result)
+                                        Settings(botClient, callbackMessage, cancellationToken);
+                                    return;
+                                case "NewPerk":
+                                    if (BaseController.CheckPermissions(update.CallbackQuery.From.Username, PermissionsType.Moderator).Result)
+                                        _ = botClient.SendTextMessageAsync(callbackMessage.Chat.Id, "/newPerk название ключевой_аттрибут стоимость тип описание");
+                                    return;
+                                case "NewEffect":
+                                    if (BaseController.CheckPermissions(update.CallbackQuery.From.Username, PermissionsType.Moderator).Result)
+                                        _ = botClient.SendTextMessageAsync(callbackMessage.Chat.Id, "/newEffect waitForIt");
+                                    return;
+                                case "NewAction":
+                                    if (BaseController.CheckPermissions(update.CallbackQuery.From.Username, PermissionsType.Moderator).Result)
+                                        _ = botClient.SendTextMessageAsync(callbackMessage.Chat.Id, "/newAction название Exploring/Trading/Fight продолжительность_в_минутах");
+                                    return;
+                            }
                             return;
-                        case "NewAction":
-                            if (BaseController.CheckPermissions(update.CallbackQuery.From.Username, PermissionsType.Moderator).Result)
-                                _ = botClient.SendTextMessageAsync(chat.Id, "/newAction название Exploring/Trading/Fight продолжительность_в_минутах");
-                            return;
+
                         default:
                             return;
                     }
@@ -233,35 +251,21 @@ namespace HITteamBot
                 string logo = AssetsDirectory + @"\vaultboy.png";
                 if (System.IO.File.Exists(logo))
                 {
-                    using (var stream = System.IO.File.Open(logo, FileMode.Open))
-                    {
-                        await botClient.SendStickerAsync(chatId, stream);
-                    }
+                    using var stream = System.IO.File.Open(logo, FileMode.Open);
+                    await botClient.SendStickerAsync(chatId, stream);
                 }
 
                 InlineKeyboardMarkup inlineKeyboardWithPerms = new InlineKeyboardMarkup(new[]
                 {
                     new[]
                     {
-                        InlineKeyboardButton.WithCallbackData("Мой персонаж", MainMenu.Character.ToString())
+                        InlineKeyboardButton.WithCallbackData("Мой персонаж", $"Main_{MainMenu.Character}"),
+                        InlineKeyboardButton.WithCallbackData("Инфо", MainMenu.Info.ToString())
                     },
-                    new[]
-                    {
-                        InlineKeyboardButton.WithCallbackData("Настройки (только с доступом)", MainMenu.Settings.ToString())
-                    }
+                    new[] { InlineKeyboardButton.WithCallbackData("Настройки (только с доступом)", $"MainSettings_{MainMenu.Settings}") }
                 });
 
-                InlineKeyboardMarkup inlineKeyboard = new InlineKeyboardMarkup(new[]
-                {
-                    new[]
-                    {
-                        InlineKeyboardButton.WithCallbackData("Мой персонаж", MainMenu.Character.ToString())
-                    },
-                    //new[]
-                    //{
-                    //    InlineKeyboardButton.WithCallbackData("Настройки (только с доступом)", MainMenu.Settings.ToString())
-                    //}
-                });
+                InlineKeyboardMarkup inlineKeyboard = new InlineKeyboardMarkup(new[] { InlineKeyboardButton.WithCallbackData("Мой персонаж", $"Main_{MainMenu.Character}") });
 
                 await botClient.SendTextMessageAsync(
                             chatId: chatId,
@@ -281,12 +285,10 @@ namespace HITteamBot
             {
                 new[]
                 {
-                    InlineKeyboardButton.WithCallbackData("Занятия", $"{GameMenu.ActionsList}"),
-                    InlineKeyboardButton.WithCallbackData("Плейсхолдер", "woop")
+                    InlineKeyboardButton.WithCallbackData("Задания", $"Gameplay_{GameMenu.ActionsList}"),
+                    InlineKeyboardButton.WithCallbackData("Сломать бота", "woop")
                 },
-                new[] {
-                    InlineKeyboardButton.WithCallbackData("Найстройки персонажа", $"{GameMenu.CharacterSettings}")
-                }
+                new[] { InlineKeyboardButton.WithCallbackData("Найстройки персонажа", $"Main_{GameMenu.CharacterSettings}") }
             });
 
             if (message.Text.ToLower().Replace("/", "").Replace($"@{botClient.GetMeAsync().Result.FirstName.ToLower()}", "") == "character") await botClient.SendTextMessageAsync(
@@ -308,10 +310,13 @@ namespace HITteamBot
         public static async void ActionsListGet(ITelegramBotClient botClient, Message message, string type, CancellationToken cancellationToken)
         {
             List<InlineKeyboardButton> actions = new List<InlineKeyboardButton>();
-            foreach (var action in ActionsController.GetActions(type))
+            foreach (var action in await ActionsController.GetActions(type))
             {
-                actions.Add(InlineKeyboardButton.WithCallbackData($"{action.Name.Replace("_", " ")}", $"StartAction{(int)action.Type}"));
+                actions.Add(InlineKeyboardButton.WithCallbackData($"{action.Name.Replace("_", " ")}", $"Gameplay_{GameMenu.ActionInfo}_"));
             }
+            if (actions.Count() == 0) actions.Add(InlineKeyboardButton.WithCallbackData("Нечем заняться", $"Main_{MainMenu.Back}"));
+            else actions.Add(InlineKeyboardButton.WithCallbackData("Назад", $"Main_{MainMenu.Back}"));
+
             InlineKeyboardMarkup inlineKeyboard = new InlineKeyboardMarkup(actions);
 
             await botClient.EditMessageReplyMarkupAsync(
@@ -321,9 +326,33 @@ namespace HITteamBot
                         cancellationToken: cancellationToken);
         }
 
+        public static async void ActionInfo(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
+        {
+            InlineKeyboardMarkup inlineKeyboard = new InlineKeyboardMarkup(new[]
+            {
+                InlineKeyboardButton.WithCallbackData("Отправиться", $"Gameplay_{GameMenu.StartAction}_"),
+                InlineKeyboardButton.WithCallbackData("Назад", $"Gameplay_{MainMenu.Back}")
+            });
+            await botClient.SendTextMessageAsync(
+                        chatId: message.Chat.Id,
+                        text: "",
+                        parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
+                        replyMarkup: inlineKeyboard,
+                        cancellationToken: cancellationToken);
+        }
+
+        public static async void StartAction(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
+        {
+            
+        }
+
         public static async void CharacterSettings(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
         {
-            InlineKeyboardMarkup newAvatar = new InlineKeyboardMarkup(new[] { InlineKeyboardButton.WithCallbackData("Новый аватар", MainMenu.Avatar.ToString()) });
+            InlineKeyboardMarkup newAvatar = new InlineKeyboardMarkup(new[] 
+            {
+                InlineKeyboardButton.WithCallbackData("Новый аватар", $"Main_{MainMenu.Avatar}"),
+                InlineKeyboardButton.WithCallbackData("Назад", $"Main_{MainMenu.Back}")
+            });
 
             await botClient.EditMessageReplyMarkupAsync(
                         chatId: message.Chat.Id,
@@ -332,23 +361,23 @@ namespace HITteamBot
                         cancellationToken: cancellationToken);
         }
 
-        public static async void Settings(ITelegramBotClient botClient, Chat chat, CancellationToken cancellationToken)
+        public static async void Settings(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
         {
             InlineKeyboardMarkup inlineKeyboard = new InlineKeyboardMarkup(new[]
             {
                 new[]
                 {
-                    InlineKeyboardButton.WithCallbackData("Создать перк", SettingsMenu.NewPerk.ToString()),
-                    InlineKeyboardButton.WithCallbackData("Создать воздействие", SettingsMenu.NewEffect.ToString())
+                    InlineKeyboardButton.WithCallbackData("Создать перк", $"MainSettings_{SettingsMenu.NewPerk}"),
+                    InlineKeyboardButton.WithCallbackData("Создать воздействие", $"MainSettings_{SettingsMenu.NewEffect}")
                 },
                 new[]
                 {
-                    InlineKeyboardButton.WithCallbackData("Создать действие", SettingsMenu.NewAction.ToString())
+                    InlineKeyboardButton.WithCallbackData("Создать действие", $"MainSettings_{SettingsMenu.NewAction}")
                 }
             });
 
             await botClient.SendTextMessageAsync(
-                        chatId: chat.Id,
+                        chatId: message.Chat.Id,
                         text: "Настройки",
                         parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
                         replyMarkup: inlineKeyboard,
@@ -369,12 +398,15 @@ namespace HITteamBot
         Character,
         Avatar,
         Settings,
-        Info
+        Info,
+        Back
     }
 
     enum GameMenu
     {
         ActionsList,
+        ActionInfo,
+        StartAction,
         CharacterSettings
     }
 

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using HITteamBot.Repository.Entities.Characters;
+using HITteamBot.Repository.Entities.Actions;
 
 namespace HITteamBot.Repository.Controllers
 {
@@ -19,6 +20,29 @@ namespace HITteamBot.Repository.Controllers
                 { RadContamination.Lethal, "Летальный" }
             };
             return locales[level];
+        }
+
+        public static string GetActionType(ActionType type)
+        {
+            Dictionary<ActionType, string> locales = new Dictionary<ActionType, string>()
+            {
+                { ActionType.Exploring, "Исследование" },
+                { ActionType.Trading, "Торговля" },
+                { ActionType.Fight, "Бой" }
+            };
+            return locales[type];
+        }
+
+        public static string GetActionReward(ActionRewardType type)
+        {
+            Dictionary<ActionRewardType, string> locales = new Dictionary<ActionRewardType, string>()
+            {
+                { ActionRewardType.Experience, "Опыт" },
+                { ActionRewardType.Caps, "Крышки" },
+                { ActionRewardType.Junk, "Хлам" },
+                { ActionRewardType.Item, "Предмет" }
+            };
+            return locales[type];
         }
     }
 }

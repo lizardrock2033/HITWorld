@@ -62,20 +62,24 @@ namespace HITteamBot.Repository.Controllers
             }
         }
 
-        public static List<Entities.Actions.Action> GetActions(string query)
+        public static async Task<List<Entities.Actions.Action>> GetActions(string query)
         {
             List<Entities.Actions.Action> actionsList = new List<Entities.Actions.Action>();
             try
             {
                 ActionType type = (ActionType)Enum.Parse(typeof(ActionType), query);
-                string path = Program.ActionsDirectory + $@"\{type.ToString()}";
-                if (System.IO.Directory.Exists(path))
+                string path = Program.ActionsDirectory + $@"\{type}";
+                Task task = Task.Factory.StartNew(() => 
                 {
-                    foreach (var act in System.IO.Directory.GetFiles(path))
+                    if (System.IO.Directory.Exists(path))
                     {
-                        actionsList.Add(JsonConvert.DeserializeObject<Entities.Actions.Action>(System.IO.File.ReadAllText(act)));
+                        foreach (var act in System.IO.Directory.GetFiles(path))
+                        {
+                            actionsList.Add(JsonConvert.DeserializeObject<Entities.Actions.Action>(System.IO.File.ReadAllText(act)));
+                        }
                     }
-                }
+                });
+                await task;
             }
             catch (Exception)
             {
@@ -83,5 +87,46 @@ namespace HITteamBot.Repository.Controllers
             }
             return actionsList;
         }
+
+        public static async Task<string> GetActionInfo(string query)
+        {
+            Entities.Actions.Action action = new Entities.Actions.Action();
+            string info = "Информация о задании не найдена";
+            try
+            {
+                string[] data = query.Trim().Split(new char[] { ' ' });
+                ActionType type = (ActionType)Enum.Parse(typeof(ActionType), data[0]);
+                string path = Program.ActionsDirectory + $@"\{type}\{data[1]}.json";
+                Task task = Task.Factory.StartNew(() =>
+                {
+                    if (System.IO.File.Exists(path))
+                        action = JsonConvert.DeserializeObject<Entities.Actions.Action>(System.IO.File.ReadAllText(path));
+                });
+
+                await task;
+                if (action != null)
+                {
+                    info = $"*Задание:*   _{action.Name.Replace("_", " ")}_\r\n" +
+                            $"*Тип задания:*   _{Dictionaries.GetActionType(type)}_\r\n" +
+                            $"*Продолжительность:*   _{TimeSpan.FromMinutes(action.DurationInMinutes).ToString(@"hh\:mm")}_\r\n\r\n" +
+                            $"*Награды:*\r\n\r\n";
+
+                    foreach (var reward in action.Rewards)
+                    {
+                        info += $"*{Dictionaries.GetActionReward(reward.Type)}:*   _{reward.Amount}_\r\n";
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                return "Ошибка";
+            }
+            return info;
+        }
+
+        //public static async Task<string> StartAction(string query)
+        //{
+
+        //}
     }
 }
