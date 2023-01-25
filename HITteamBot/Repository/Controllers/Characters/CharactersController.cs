@@ -4,6 +4,7 @@ using HITteamBot.Repository.Entities.Items.Chemicals;
 using HITteamBot.Repository.Entities.Items.Ammo;
 using HITteamBot.Repository.Entities.Items.Junk;
 using HITteamBot.Repository.Entities.Locations;
+using HITteamBot.Repository.Controllers.Base;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -25,7 +26,7 @@ namespace HITteamBot.Repository.Controllers.Characters
             try
             {
                 string[] strings = query.Trim().Split(new char[] { ' ' });
-                string userDirectory = Program.GetUserDirectory(strings[0]);
+                string userDirectory = BaseController.GetUserDirectory(strings[0]);
                 string userCharacterDirectory = userDirectory + $"\\Character";
                 if (!Directory.Exists(userDirectory)) Directory.CreateDirectory(userDirectory);
                 if (!Directory.Exists(userCharacterDirectory)) Directory.CreateDirectory(userCharacterDirectory);
@@ -46,7 +47,7 @@ namespace HITteamBot.Repository.Controllers.Characters
                     Characteristics = new Characteristics() { Attributes = new SPECIAL() { IsSet = false } },
                     Inventory = new Inventory()
                     {
-                        Cups = 50,
+                        Caps = 50,
                         Chemicals = new Chemicals()
                         {
                             Stimpacks = new List<Stimpack>()
@@ -96,34 +97,6 @@ namespace HITteamBot.Repository.Controllers.Characters
                 }
 
                 return "Ошибка";
-
-                //InlineKeyboardMarkup inlineKeyboard = new InlineKeyboardMarkup(new[]
-                //{
-                //    new[]
-                //    {
-                //        InlineKeyboardButton.WithCallbackData("Человек", $"SetRace"),
-                //        InlineKeyboardButton.WithCallbackData("Воин", $"SetClass")
-                //    },
-                //    new[] {
-                //        InlineKeyboardButton.WithCallbackData("Эльф", $"SetRace"),
-                //        InlineKeyboardButton.WithCallbackData("Убийца", $"SetClass")
-                //    },
-                //    new[] {
-                //        InlineKeyboardButton.WithCallbackData("Дворф", $"SetRace"),
-                //        InlineKeyboardButton.WithCallbackData("Лучник", $"SetClass")
-                //    },
-                //    new[] {
-                //        InlineKeyboardButton.WithCallbackData("Орк", $"SetRace"),
-                //        InlineKeyboardButton.WithCallbackData("Маг", $"SetClass")
-                //    },
-                //    new[] {
-                //        InlineKeyboardButton.WithCallbackData("Людоящер", $"SetRace"),
-                //        InlineKeyboardButton.WithCallbackData("Призыватель", $"SetClass")
-                //    },
-                //    new[] {
-                //        InlineKeyboardButton.WithCallbackData("Подтвердить", $"SaveRaceAndClass{name}")
-                //    }
-                //});
             }
             catch (Exception)
             {
@@ -136,7 +109,7 @@ namespace HITteamBot.Repository.Controllers.Characters
             try
             {
                 string[] strings = query.Trim().Split(new char[] { ' ' });
-                string userCharacterDirectory = Program.GetUserDirectory(strings[0]) + $"\\Character";
+                string userCharacterDirectory = BaseController.GetUserDirectory(strings[0]) + $"\\Character";
                 Character character = GetCharacter(strings[0]);
                 if (character.Characteristics.Attributes.IsSet) return "Вы уже распределили очки характеристик";
 
@@ -165,12 +138,14 @@ namespace HITteamBot.Repository.Controllers.Characters
                         }
                     };
 
-                    character.Characteristics.Health = 100 + 10 * character.Characteristics.Attributes.Endurance;
-                    character.Characteristics.ActionPoints = 100 + 10 * character.Characteristics.Attributes.Agility;
+                    character.Characteristics.Health = character.Characteristics.CurrentHealth = 100 + 10 * character.Characteristics.Attributes.Endurance;
+                    character.Characteristics.ActionPoints = character.Characteristics.CurrentAP = 100 + 10 * character.Characteristics.Attributes.Agility;
                     character.Characteristics.WeightLimit = (short)(100 + 5 * character.Characteristics.Attributes.Strength);
+                    character.Characteristics.CurrentWL = 0;
                     character.Characteristics.Experience = 0;
                     character.Characteristics.NextLevelOn = 500;
                     character.Characteristics.Rads = 0;
+                    character.Characteristics.RadContamination = RadContamination.Clear;
 
                     if (SaveCharacter(character))
                     {
@@ -191,7 +166,7 @@ namespace HITteamBot.Repository.Controllers.Characters
             try
             {
                 string[] strings = query.Trim().Split(new char[] { ' ' });
-                string userCharacterDirectory = Program.GetUserDirectory(strings[0]) + $"\\Character";
+                string userCharacterDirectory = BaseController.GetUserDirectory(strings[0]) + $"\\Character";
                 Character character = GetCharacter(strings[0]);
                 if (character.IsActive)
                 {
@@ -215,7 +190,7 @@ namespace HITteamBot.Repository.Controllers.Characters
         {
             try
             {
-                string userCharacterDirectory = Program.GetUserDirectory(username) + $"\\Character";
+                string userCharacterDirectory = BaseController.GetUserDirectory(username) + $"\\Character";
                 if (Directory.Exists(userCharacterDirectory))
                 {
                     Character character = new Character();
@@ -229,8 +204,10 @@ namespace HITteamBot.Repository.Controllers.Characters
                                 $"{(character.Gender.ToLower().Contains("женский") ? Emoji.WomanSign : Emoji.MenSign)} *Пол:*   _{character.Gender}_\r\n" +
                                 $"{Emoji.Star} *Уровень:*   _{character.Level} ({character.Characteristics.Experience}/{character.Characteristics.NextLevelOn})_\r\n\r\n" +
                                 $"{Emoji.Pager} *Характеристики:*\r\n\r\n" +
-                                $"{Emoji.Heart} *HP:*   _{character.Characteristics.Health}_\r\n" +
-                                $"{Emoji.Lightning} *AP:*   _{character.Characteristics.ActionPoints}_\r\n\r\n" +
+                                $"{Emoji.Heart} *HP:*   _{character.Characteristics.CurrentHealth}/{character.Characteristics.Health}_\r\n" +
+                                $"{Emoji.Lightning} *AP:*   _{character.Characteristics.CurrentAP}/{character.Characteristics.ActionPoints}_\r\n" +
+                                $"{Emoji.Bag} *Лимит веса:*   _{character.Characteristics.CurrentWL}/{character.Characteristics.WeightLimit}_\r\n" +
+                                $"{Emoji.RadioactiveSign} *Радиация:*   _{Dictionaries.GetRadContamination(character.Characteristics.RadContamination)} ({character.Characteristics.Rads})_\r\n\r\n" +
                                 $"{Emoji.Muscle} *Сила:*   _{character.Characteristics.Attributes.Strength}_\r\n" +
                                 $"{Emoji.Eye} *Восприятие:*   _{character.Characteristics.Attributes.Perception}_\r\n" +
                                 $"{Emoji.Lungs} *Выносливость:*   _{character.Characteristics.Attributes.Endurance}_\r\n" +
@@ -256,7 +233,7 @@ namespace HITteamBot.Repository.Controllers.Characters
             Character character = new Character();
             try
             {
-                string characterPath = Program.GetUserDirectory(username) + $@"\Character";
+                string characterPath = BaseController.GetUserDirectory(username) + $@"\Character";
                 if (Directory.Exists(characterPath))
                 {
                     foreach (var ch in Directory.GetFiles(characterPath))
@@ -278,8 +255,8 @@ namespace HITteamBot.Repository.Controllers.Characters
         {
             try
             {
-                string characterPath = Program.GetUserDirectory(character.User) + $@"\Character\{character.Name}.json";
-                if (Directory.Exists(Program.GetUserDirectory(character.User) + $@"\Character\"))
+                string characterPath = BaseController.GetUserDirectory(character.User) + $@"\Character\{character.Name}.json";
+                if (Directory.Exists(BaseController.GetUserDirectory(character.User) + $@"\Character\"))
                     System.IO.File.WriteAllText(characterPath, JsonConvert.SerializeObject(character));
             }
             catch (Exception)

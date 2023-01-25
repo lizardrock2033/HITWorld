@@ -12,7 +12,7 @@ namespace HITteamBot.Repository.Entities.Perks
         public SPECIALs Attribute { get; set; }
         public short Cost { get; set; }
         public PerkTypes Type { get; set; }
-        public Actions Action { get; set; }
+        public Effect Action { get; set; }
         public string Description { get; set; }
     }
 

@@ -10,7 +10,7 @@ namespace HITteamBot.Repository.Entities.Characters
 {
     public class Inventory
     {
-        public long Cups { get; set; }
+        public long Caps { get; set; }
         public Chemicals Chemicals { get; set; }
         public Ammo Ammo { get; set; }
         public Junk Junk { get; set; }

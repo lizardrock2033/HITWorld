@@ -4,23 +4,23 @@ using System.Text;
 
 namespace HITteamBot.Repository.Entities.Perks
 {
-    public class Actions
+    public class Effect
     {
         public string Name { get; set; }
-        public ActionTargets Target { get; set; }
-        public ActionTypes Type { get; set; }
+        public EffectTarget Target { get; set; }
+        public EffectType Type { get; set; }
         public long Power { get; set; }
         public string Description { get; set; }
     }
 
-    public enum ActionTargets
+    public enum EffectTarget
     {
         Character,
         Enemy,
         Any
     }
 
-    public enum ActionTypes
+    public enum EffectType
     {
         Damage,
         Heal,

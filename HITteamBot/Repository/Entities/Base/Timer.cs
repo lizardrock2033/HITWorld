@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 
-namespace HITteamBot.Repository.Entities.System
+namespace HITteamBot.Repository.Entities.Base
 {
     public class EventsTimer
     {

@@ -35,23 +35,25 @@ namespace HITteamBot.Repository.Controllers.Characters
             }
         }
 
-        public static async Task<string> AddNewAction(string query)
+        public static async Task<string> AddNewEffect(string query)
         {
             try
             {
                 string[] strings = query.Trim().Split(new char[] { ' ' });
-                Actions action = new Actions()
+                Effect effect = new Effect()
                 {
                     Name = strings[0],
-                    Target = (ActionTargets)Enum.Parse(typeof(ActionTargets), strings[1]),
-                    Type = (ActionTypes)Enum.Parse(typeof(ActionTypes), strings[2]),
+                    Target = (EffectTarget)Enum.Parse(typeof(EffectTarget), strings[1]),
+                    Type = (EffectType)Enum.Parse(typeof(EffectType), strings[2]),
                     Power = Int64.Parse(strings[3]),
                     Description = string.Join(' ', strings[4..])
                 };
-                if (System.IO.File.Exists(Program.ActionsDirectory + $@"\{action.Name}.json")) return "Воздействие с таким названием уже существует";
-                Task task = Task.Factory.StartNew(() => { System.IO.File.WriteAllText(Program.ActionsDirectory + $@"\{action.Name}.json", JsonConvert.SerializeObject(action)); });
+                if (!System.IO.Directory.Exists(Program.PerksDirectory + $@"\Effects")) System.IO.Directory.CreateDirectory(Program.PerksDirectory + $@"\Effects");
+                if (System.IO.File.Exists(Program.PerksDirectory + $@"\Effects\{effect.Name}.json")) return "Воздействие с таким названием уже существует";
+
+                Task task = Task.Factory.StartNew(() => { System.IO.File.WriteAllText(Program.ActionsDirectory + $@"\Effects\{effect.Name}.json", JsonConvert.SerializeObject(effect)); });
                 await task;
-                return $"Воздействие {action.Name} добавлено";
+                return $"Воздействие {effect.Name} добавлено";
             }
             catch (Exception)
             {
