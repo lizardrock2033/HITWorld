@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using HITteamBot.Repository.Entities.Actions;
+using HITteamBot.Repository.Entities.Base;
 using Newtonsoft.Json;
 
 namespace HITteamBot.Repository.Controllers
@@ -62,12 +63,11 @@ namespace HITteamBot.Repository.Controllers
             }
         }
 
-        public static async Task<List<Entities.Actions.Action>> GetActions(string query)
+        public static async Task<List<Entities.Actions.Action>> GetActions(ActionType type)
         {
             List<Entities.Actions.Action> actionsList = new List<Entities.Actions.Action>();
             try
             {
-                ActionType type = (ActionType)Enum.Parse(typeof(ActionType), query);
                 string path = Program.ActionsDirectory + $@"\{type}";
                 Task task = Task.Factory.StartNew(() => 
                 {
@@ -96,7 +96,7 @@ namespace HITteamBot.Repository.Controllers
             {
                 string[] data = query.Trim().Split(new char[] { ' ' });
                 ActionType type = (ActionType)Enum.Parse(typeof(ActionType), data[0]);
-                string path = Program.ActionsDirectory + $@"\{type}\{data[1]}.json";
+                string path = Program.ActionsDirectory + $@"\{type}\{string.Join('_', data[1..])}.json";
                 Task task = Task.Factory.StartNew(() =>
                 {
                     if (System.IO.File.Exists(path))
@@ -106,10 +106,10 @@ namespace HITteamBot.Repository.Controllers
                 await task;
                 if (action != null)
                 {
-                    info = $"*Задание:*   _{action.Name.Replace("_", " ")}_\r\n" +
-                            $"*Тип задания:*   _{Dictionaries.GetActionType(type)}_\r\n" +
-                            $"*Продолжительность:*   _{TimeSpan.FromMinutes(action.DurationInMinutes).ToString(@"hh\:mm")}_\r\n\r\n" +
-                            $"*Награды:*\r\n\r\n";
+                    info = $"{Emoji.Clipboard}*Задание:*   _{action.Name.Replace("_", " ")}_\r\n" +
+                            $"{Emoji.FileCabinet}*Тип задания:*   _{Dictionaries.GetActionType(type)}_\r\n" +
+                            $"{Emoji.Stopwatch}*Продолжительность:*   _{TimeSpan.FromMinutes(action.DurationInMinutes).ToString(@"hh\:mm")}ч._\r\n\r\n" +
+                            $"{Emoji.Reward}*Награды:*\r\n\r\n";
 
                     foreach (var reward in action.Rewards)
                     {

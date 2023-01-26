@@ -4,6 +4,7 @@ using HITteamBot.Repository.Entities.Items.Chemicals;
 using HITteamBot.Repository.Entities.Items.Ammo;
 using HITteamBot.Repository.Entities.Items.Junk;
 using HITteamBot.Repository.Entities.Locations;
+using HITteamBot.Repository.Entities.Base;
 using HITteamBot.Repository.Controllers.Base;
 using Newtonsoft.Json;
 using System;
@@ -206,7 +207,7 @@ namespace HITteamBot.Repository.Controllers.Characters
                                 $"{Emoji.Pager} *Характеристики:*\r\n\r\n" +
                                 $"{Emoji.Heart} *HP:*   _{character.Characteristics.CurrentHealth}/{character.Characteristics.Health}_\r\n" +
                                 $"{Emoji.Lightning} *AP:*   _{character.Characteristics.CurrentAP}/{character.Characteristics.ActionPoints}_\r\n" +
-                                $"{Emoji.Bag} *Лимит веса:*   _{character.Characteristics.CurrentWL}/{character.Characteristics.WeightLimit}_\r\n" +
+                                $"{Emoji.WeightLifter} *Лимит веса:*   _{character.Characteristics.CurrentWL}/{character.Characteristics.WeightLimit}_\r\n" +
                                 $"{Emoji.RadioactiveSign} *Радиация:*   _{Dictionaries.GetRadContamination(character.Characteristics.RadContamination)} ({character.Characteristics.Rads})_\r\n\r\n" +
                                 $"{Emoji.Muscle} *Сила:*   _{character.Characteristics.Attributes.Strength}_\r\n" +
                                 $"{Emoji.Eye} *Восприятие:*   _{character.Characteristics.Attributes.Perception}_\r\n" +

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace HITteamBot.Repository.Controllers
+namespace HITteamBot.Repository.Entities.Base
 {
     public static class Emoji
     {
@@ -26,5 +26,11 @@ namespace HITteamBot.Repository.Controllers
         public readonly static string Incognito = "👤";
         public readonly static string Rosette = "🏵";
         public readonly static string Exclamation = "❗️";
+        public readonly static string WeightLifter = "🏋🏻";
+        public readonly static string Clipboard = "📋";
+        public readonly static string FileCabinet = "🗄";
+        public readonly static string Stopwatch = "⏱";
+        public readonly static string Reward = "💰";
+        public readonly static string Caps = "㊙️";
     }
 }

@@ -19,6 +19,7 @@ using HITteamBot.Repository.Controllers;
 using HITteamBot.Repository.Controllers.Characters;
 using HITteamBot.Repository.Entities.Base;
 using HITteamBot.Repository.Controllers.Base;
+using HITteamBot.Repository.Entities.Actions;
 
 namespace HITteamBot
 {
@@ -66,7 +67,7 @@ namespace HITteamBot
             var message = update.Message;
             try
             {
-                if (update.Type == Telegram.Bot.Types.Enums.UpdateType.Message && !string.IsNullOrEmpty(message.Text) && DateTime.Now.ToUniversalTime() - message.Date < TimeSpan.FromMinutes(5) && message.Text[0] == '/')
+                if (update.Type == Telegram.Bot.Types.Enums.UpdateType.Message && !string.IsNullOrEmpty(message.Text) && DateTime.Now.ToUniversalTime() - message.Date < TimeSpan.FromMinutes(3) && message.Text[0] == '/')
                 {
                     switch (message.Text.ToLower().Replace("/", "").Replace($"@{botClient.GetMeAsync().Result.FirstName.ToLower()}", "").Split(new char[] { ' ' })[0])
                     {
@@ -81,7 +82,7 @@ namespace HITteamBot
                             string charInfo = await CharactersController.GetCharacterInfo(message.From.Username);
                             if (charInfo.Contains("не найден"))
                             {
-                                InlineKeyboardMarkup newCharacter = new InlineKeyboardMarkup(new[] { InlineKeyboardButton.WithCallbackData("Создать персонажа", $"Main_{MainMenu.NewCharacter}") });
+                                InlineKeyboardMarkup newCharacter = new InlineKeyboardMarkup(new[] { InlineKeyboardButton.WithCallbackData("Создать персонажа", $"{(int)MainShedule.MainMenu}_{MainMenu.NewCharacter}") });
                                 _ = botClient.SendTextMessageAsync(chatId: message.Chat.Id, text: charInfo, Telegram.Bot.Types.Enums.ParseMode.Markdown, replyMarkup: newCharacter, cancellationToken: cancellationToken);
                             }
                             else Play(botClient, message, charInfo, cancellationToken);
@@ -132,8 +133,9 @@ namespace HITteamBot
 
                     switch (callback[0])
                     {
+                        // MainShedule.MainMenu
                         // Создание и вызов персонажа
-                        case "Main":
+                        case "0":
                             switch (callback[1])
                             {
                                 case "NewCharacter":
@@ -144,13 +146,13 @@ namespace HITteamBot
                                     string charInfo = await CharactersController.GetCharacterInfo(update.CallbackQuery.From.Username);
                                     if (charInfo.Contains("не найден"))
                                     {
-                                        InlineKeyboardMarkup newCharacter = new InlineKeyboardMarkup(new[] { InlineKeyboardButton.WithCallbackData("Создать персонажа", $"Main_{MainMenu.NewCharacter}") });
+                                        InlineKeyboardMarkup newCharacter = new InlineKeyboardMarkup(new[] { InlineKeyboardButton.WithCallbackData("Создать персонажа", $"{(int)MainShedule.MainMenu}_{MainMenu.NewCharacter}") });
                                         _ = botClient.SendTextMessageAsync(chatId: callbackMessage.Chat.Id, text: charInfo, Telegram.Bot.Types.Enums.ParseMode.Markdown, replyMarkup: newCharacter, cancellationToken: cancellationToken);
                                     }
-                                    else Play(botClient, update.CallbackQuery.Message, charInfo, cancellationToken);
+                                    else Play(botClient, callbackMessage, charInfo, cancellationToken);
                                     return;
                                 case "CharacterSettings":
-                                    CharacterSettings(botClient, update.CallbackQuery.Message, cancellationToken);
+                                    CharacterSettings(botClient, callbackMessage, cancellationToken);
                                     return;
                                 case "Avatar":
                                     _ = botClient.SendTextMessageAsync(callbackMessage.Chat.Id, "Вы можете выбрать любой эмодзи в качестве аватара вашего персонажа. " +
@@ -161,35 +163,37 @@ namespace HITteamBot
                                     string backToInfo = await CharactersController.GetCharacterInfo(update.CallbackQuery.From.Username);
                                     if (backToInfo.Contains("не найден"))
                                     {
-                                        InlineKeyboardMarkup newCharacter = new InlineKeyboardMarkup(new[] { InlineKeyboardButton.WithCallbackData("Создать персонажа", $"Main_{MainMenu.NewCharacter}") });
+                                        InlineKeyboardMarkup newCharacter = new InlineKeyboardMarkup(new[] { InlineKeyboardButton.WithCallbackData("Создать персонажа", $"{(int)MainShedule.MainMenu}_{MainMenu.NewCharacter}") });
                                         _ = botClient.SendTextMessageAsync(chatId: callbackMessage.Chat.Id, text: backToInfo, Telegram.Bot.Types.Enums.ParseMode.Markdown, replyMarkup: newCharacter, cancellationToken: cancellationToken);
                                     }
-                                    else Play(botClient, update.CallbackQuery.Message, backToInfo, cancellationToken);
+                                    else Play(botClient, callbackMessage, backToInfo, cancellationToken);
                                     return;
                             }
                             return;
 
+                        // MainShedule.GameMenu
                         // Геймплей
-                        case "Gameplay":
+                        case "1":
                             switch (callback[1])
                             {
                                 case "ActionsList":
-                                    ActionsListGet(botClient, update.CallbackQuery.Message, "Exploring", cancellationToken);
+                                    ActionsListGet(botClient, callbackMessage, ActionType.Exploring, cancellationToken);
                                     return;
                                 case "ActionInfo":
-                                    
+                                    ActionInfo(botClient, callbackMessage, string.Join(' ', callback[2..]), cancellationToken);
                                     return;
                                 case "StartAction":
                                     await botClient.SendTextMessageAsync(callbackMessage.Chat.Id, update.CallbackQuery.Data.Replace("StartAction", ""));
                                     return;
                                 case "Back":
-                                    ActionsListGet(botClient, update.CallbackQuery.Message, "Exploring", cancellationToken);
+                                    ActionsListGet(botClient, callbackMessage, ActionType.Exploring, cancellationToken);
                                     return;
                             }
                             return;
 
+                        // MainShedule.SettingsMenu
                         // Системные настройки и заведение новых данных (с правами доступа)
-                        case "MainSettings":
+                        case "2":
                             switch (callback[1])
                             {
                                 case "Settings":
@@ -259,13 +263,13 @@ namespace HITteamBot
                 {
                     new[]
                     {
-                        InlineKeyboardButton.WithCallbackData("Мой персонаж", $"Main_{MainMenu.Character}"),
+                        InlineKeyboardButton.WithCallbackData("Мой персонаж", $"{(int)MainShedule.MainMenu}_{MainMenu.Character}"),
                         InlineKeyboardButton.WithCallbackData("Инфо", MainMenu.Info.ToString())
                     },
-                    new[] { InlineKeyboardButton.WithCallbackData("Настройки (только с доступом)", $"MainSettings_{MainMenu.Settings}") }
+                    new[] { InlineKeyboardButton.WithCallbackData("Настройки (только с доступом)", $"{(int)MainShedule.SettingsMenu}_{MainMenu.Settings}") }
                 });
 
-                InlineKeyboardMarkup inlineKeyboard = new InlineKeyboardMarkup(new[] { InlineKeyboardButton.WithCallbackData("Мой персонаж", $"Main_{MainMenu.Character}") });
+                InlineKeyboardMarkup inlineKeyboard = new InlineKeyboardMarkup(new[] { InlineKeyboardButton.WithCallbackData("Мой персонаж", $"{(int)MainShedule.MainMenu}_{MainMenu.Character}") });
 
                 await botClient.SendTextMessageAsync(
                             chatId: chatId,
@@ -285,10 +289,10 @@ namespace HITteamBot
             {
                 new[]
                 {
-                    InlineKeyboardButton.WithCallbackData("Задания", $"Gameplay_{GameMenu.ActionsList}"),
+                    InlineKeyboardButton.WithCallbackData("Задания", $"{(int)MainShedule.GameMenu}_{GameMenu.ActionsList}"),
                     InlineKeyboardButton.WithCallbackData("Сломать бота", "woop")
                 },
-                new[] { InlineKeyboardButton.WithCallbackData("Найстройки персонажа", $"Main_{GameMenu.CharacterSettings}") }
+                new[] { InlineKeyboardButton.WithCallbackData("Найстройки персонажа", $"{(int)MainShedule.MainMenu}_{GameMenu.CharacterSettings}") }
             });
 
             if (message.Text.ToLower().Replace("/", "").Replace($"@{botClient.GetMeAsync().Result.FirstName.ToLower()}", "") == "character") await botClient.SendTextMessageAsync(
@@ -307,15 +311,15 @@ namespace HITteamBot
                         cancellationToken: cancellationToken);
         }
 
-        public static async void ActionsListGet(ITelegramBotClient botClient, Message message, string type, CancellationToken cancellationToken)
+        public static async void ActionsListGet(ITelegramBotClient botClient, Message message, ActionType type, CancellationToken cancellationToken)
         {
             List<InlineKeyboardButton> actions = new List<InlineKeyboardButton>();
             foreach (var action in await ActionsController.GetActions(type))
             {
-                actions.Add(InlineKeyboardButton.WithCallbackData($"{action.Name.Replace("_", " ")}", $"Gameplay_{GameMenu.ActionInfo}_"));
+                actions.Add(InlineKeyboardButton.WithCallbackData($"{action.Name.Replace("_", " ")}", $"{(int)MainShedule.GameMenu}_{GameMenu.ActionInfo}_{(int)type}_{action.Name}"));
             }
-            if (actions.Count() == 0) actions.Add(InlineKeyboardButton.WithCallbackData("Нечем заняться", $"Main_{MainMenu.Back}"));
-            else actions.Add(InlineKeyboardButton.WithCallbackData("Назад", $"Main_{MainMenu.Back}"));
+            if (actions.Count() == 0) actions.Add(InlineKeyboardButton.WithCallbackData("Нечем заняться", $"{(int)MainShedule.MainMenu}_{MainMenu.Back}"));
+            else actions.Add(InlineKeyboardButton.WithCallbackData("Назад", $"{(int)MainShedule.MainMenu}_{MainMenu.Back}"));
 
             InlineKeyboardMarkup inlineKeyboard = new InlineKeyboardMarkup(actions);
 
@@ -326,16 +330,16 @@ namespace HITteamBot
                         cancellationToken: cancellationToken);
         }
 
-        public static async void ActionInfo(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
+        public static async void ActionInfo(ITelegramBotClient botClient, Message message, string query, CancellationToken cancellationToken)
         {
             InlineKeyboardMarkup inlineKeyboard = new InlineKeyboardMarkup(new[]
             {
-                InlineKeyboardButton.WithCallbackData("Отправиться", $"Gameplay_{GameMenu.StartAction}_"),
-                InlineKeyboardButton.WithCallbackData("Назад", $"Gameplay_{MainMenu.Back}")
+                InlineKeyboardButton.WithCallbackData("Отправиться", $"{(int)MainShedule.GameMenu}_{GameMenu.StartAction}_"),
+                InlineKeyboardButton.WithCallbackData("Назад", $"{(int)MainShedule.GameMenu}_{MainMenu.Back}")
             });
             await botClient.SendTextMessageAsync(
                         chatId: message.Chat.Id,
-                        text: "",
+                        text: await ActionsController.GetActionInfo(query),
                         parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
                         replyMarkup: inlineKeyboard,
                         cancellationToken: cancellationToken);
@@ -350,8 +354,8 @@ namespace HITteamBot
         {
             InlineKeyboardMarkup newAvatar = new InlineKeyboardMarkup(new[] 
             {
-                InlineKeyboardButton.WithCallbackData("Новый аватар", $"Main_{MainMenu.Avatar}"),
-                InlineKeyboardButton.WithCallbackData("Назад", $"Main_{MainMenu.Back}")
+                InlineKeyboardButton.WithCallbackData("Новый аватар", $"{(int)MainShedule.MainMenu}_{MainMenu.Avatar}"),
+                InlineKeyboardButton.WithCallbackData("Назад", $"{(int)MainShedule.MainMenu}_{MainMenu.Back}")
             });
 
             await botClient.EditMessageReplyMarkupAsync(
@@ -367,12 +371,12 @@ namespace HITteamBot
             {
                 new[]
                 {
-                    InlineKeyboardButton.WithCallbackData("Создать перк", $"MainSettings_{SettingsMenu.NewPerk}"),
-                    InlineKeyboardButton.WithCallbackData("Создать воздействие", $"MainSettings_{SettingsMenu.NewEffect}")
+                    InlineKeyboardButton.WithCallbackData("Создать перк", $"{(int)MainShedule.SettingsMenu}_{SettingsMenu.NewPerk}"),
+                    InlineKeyboardButton.WithCallbackData("Создать воздействие", $"{(int)MainShedule.SettingsMenu}_{SettingsMenu.NewEffect}")
                 },
                 new[]
                 {
-                    InlineKeyboardButton.WithCallbackData("Создать действие", $"MainSettings_{SettingsMenu.NewAction}")
+                    InlineKeyboardButton.WithCallbackData("Создать действие", $"{(int)MainShedule.SettingsMenu}_{SettingsMenu.NewAction}")
                 }
             });
 
@@ -387,9 +391,16 @@ namespace HITteamBot
         public static async Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
         {
             Console.WriteLine(JsonConvert.SerializeObject(exception.Message));
-            await Task.Delay(310000);
+            await Task.Delay(190000);
             Main(null);
         }
+    }
+
+    enum MainShedule
+    {
+        MainMenu,
+        GameMenu,
+        SettingsMenu
     }
 
     enum MainMenu
