@@ -23,7 +23,6 @@
   <ItemGroup>
     <Content Include="bin\Debug\netcoreapp3.1\Data\Objects\Actions\Exploring\Разведка_местности.json" />
     <Content Include="bin\Debug\netcoreapp3.1\Data\Objects\Users\Lizardrock\Character\Глория.json" />
-    <Content Include="bin\Debug\netcoreapp3.1\Data\Permissions.json" />
   </ItemGroup>
 
   <ItemGroup>

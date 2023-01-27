@@ -32,5 +32,6 @@ namespace HITteamBot.Repository.Entities.Base
         public readonly static string Stopwatch = "⏱";
         public readonly static string Reward = "💰";
         public readonly static string Caps = "㊙️";
+        public readonly static string Books = "📚";
     }
 }

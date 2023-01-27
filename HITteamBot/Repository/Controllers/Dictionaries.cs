@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using HITteamBot.Repository.Entities.Characters;
 using HITteamBot.Repository.Entities.Actions;
+using HITteamBot.Repository.Entities.Base;
 
 namespace HITteamBot.Repository.Controllers
 {
@@ -37,10 +38,10 @@ namespace HITteamBot.Repository.Controllers
         {
             Dictionary<ActionRewardType, string> locales = new Dictionary<ActionRewardType, string>()
             {
-                { ActionRewardType.Experience, "Опыт" },
-                { ActionRewardType.Caps, "Крышки" },
-                { ActionRewardType.Junk, "Хлам" },
-                { ActionRewardType.Item, "Предмет" }
+                { ActionRewardType.Experience, $"{Emoji.Books}_Опыт" },
+                { ActionRewardType.Caps, $"{Emoji.Caps}_Крышки" },
+                { ActionRewardType.Junk, $"_Хлам" },
+                { ActionRewardType.Item, $"_Предмет" }
             };
             return locales[type];
         }

@@ -11,9 +11,22 @@ namespace HITteamBot.Repository.Controllers.Base
 {
     public class BaseController
     {
-        public static Timer SetTimer(TimerCallback timerCallback, object state, int dueTime, int period)
+        public static Timer SetTimer(TimerCallback timerCallback, object state, int dueTime)
         {
-            return new Timer(timerCallback, state, dueTime, period);
+            return new Timer(timerCallback, state, dueTime * 60000, Timeout.Infinite);
+        }
+
+        public static bool RemoveTimer(EventsTimer timer)
+        {
+            try
+            {
+                //timer.Timer?.Dispose();
+                return Program.Events.Remove(timer);
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
 
         public static string GetUserDirectory(string username)
@@ -26,7 +39,7 @@ namespace HITteamBot.Repository.Controllers.Base
             try
             {
                 string[] data = query.Trim().Split(new char[] { ' ' });
-                string path = Program.DataDirectory + $@"\Permissions.json";
+                string path = Program.ObjectsDirectory + $@"\Permissions.json";
                 Permissions permission = new Permissions()
                 {
                     Username = data[0],
@@ -35,18 +48,9 @@ namespace HITteamBot.Repository.Controllers.Base
 
                 Task task = Task.Factory.StartNew(() =>
                 {
-                    if (System.IO.File.Exists(path))
-                    {
-                        List<Permissions> permissions = JsonConvert.DeserializeObject<List<Permissions>>(System.IO.File.ReadAllText(path));
-                        permissions.Add(permission);
-                        System.IO.File.WriteAllText(path, JsonConvert.SerializeObject(permissions));
-                    }
-                    else
-                    {
-                        List<Permissions> permissions = new List<Permissions>();
-                        permissions.Add(permission);
-                        System.IO.File.WriteAllText(path, JsonConvert.SerializeObject(permissions));
-                    }
+                    List<Permissions> permissions = System.IO.File.Exists(path) ? JsonConvert.DeserializeObject<List<Permissions>>(System.IO.File.ReadAllText(path)) : new List<Permissions>();
+                    permissions.Add(permission);
+                    System.IO.File.WriteAllText(path, JsonConvert.SerializeObject(permissions));
                 });
 
                 await task;
@@ -62,7 +66,7 @@ namespace HITteamBot.Repository.Controllers.Base
         {
             try
             {
-                string path = Program.DataDirectory + $@"\Permissions.json";
+                string path = Program.ObjectsDirectory + $@"\Permissions.json";
                 if (System.IO.File.Exists(path))
                 {
                     List<Permissions> permissions = new List<Permissions>();
