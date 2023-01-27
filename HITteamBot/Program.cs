@@ -259,13 +259,6 @@ namespace HITteamBot
         {
             try
             {
-                string logo = AssetsDirectory + @"\vaultboy.png";
-                if (System.IO.File.Exists(logo))
-                {
-                    using var stream = System.IO.File.Open(logo, FileMode.Open);
-                    await botClient.SendStickerAsync(chatId, stream);
-                }
-
                 InlineKeyboardMarkup inlineKeyboardWithPerms = new InlineKeyboardMarkup(new[]
                 {
                     new[]
