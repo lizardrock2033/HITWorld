@@ -186,6 +186,9 @@ namespace HITteamBot.Repository.Controllers
 
                         Entities.Characters.Character character = Characters.CharactersController.GetCharacter(username);
 
+                        actionHistory.Consequences.Rads = character.Characteristics.Rads;
+                        actionHistory.Consequences.Damage = character.Characteristics.Health;
+
                         foreach (var rew in actionHistory.Rewards)
                         {
                             switch (rew.Type)

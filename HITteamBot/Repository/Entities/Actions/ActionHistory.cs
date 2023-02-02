@@ -12,5 +12,6 @@ namespace HITteamBot.Repository.Entities.Actions
         public DateTime StartDate { get; set; }
         public DateTime FinishDate { get; set; }
         public List<ActionReward> Rewards { get; set; }
+        public ActionConsequences Consequences { get; set; }
     }
 }

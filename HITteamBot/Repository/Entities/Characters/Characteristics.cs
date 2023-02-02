@@ -21,11 +21,11 @@ namespace HITteamBot.Repository.Entities.Characters
 
     public enum RadContamination
     {
-        Clear,
-        Light,
-        Normal,
-        High,
-        VeryHigh,
-        Lethal
+        Clear = 0,
+        Light = 100,
+        Normal = 300,
+        High = 500,
+        VeryHigh = 700,
+        Lethal = 1000
     }
 }

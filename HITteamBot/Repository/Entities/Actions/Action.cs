@@ -10,12 +10,19 @@ namespace HITteamBot.Repository.Entities.Actions
         public ActionType Type { get; set; }
         public short DurationInMinutes { get; set; }
         public List<ActionReward> Rewards { get; set; }
+        public ActionConsequences Consequences { get; set; }
     }
 
     public class ActionReward
     {
         public ActionRewardType Type { get; set; }
         public long Amount { get; set; }
+    }
+
+    public class ActionConsequences
+    {
+        public short Rads { get; set; }
+        public int Damage { get; set; }
     }
 
     public enum ActionType
