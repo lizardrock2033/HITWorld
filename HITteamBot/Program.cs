@@ -42,6 +42,7 @@ namespace HITteamBot
             {
                 Console.WriteLine(bot.GetMeAsync().Result.FirstName + " запущен...");
                 CreateDirectories();
+                _ = ActionsController.GiveOutRewardsFromActions(DateTime.Now);
 
                 var cts = new CancellationTokenSource();
                 var cancellationToken = cts.Token;
@@ -377,11 +378,18 @@ namespace HITteamBot
                     Chat = callbackQuery.Message.Chat,
                     Username = callbackQuery.From.Username,
                     Message = $"[{character.Name}](tg://user?id={callbackQuery.From.Id}) вернулся с задания!\r\n\r\n" +
-                    $"Получено:\r\n" +
-                    $"" +
-                    $"Последствия:\r\n",
+                    $"Получено:\r\n",
+                    NotifiedBy = NotifiedBy.Action,
                     CancellationToken = cancellationToken
                 };
+
+                foreach (var rew in history.Rewards)
+                {
+                    notifyData.Message += $"{Dictionaries.GetActionReward(rew.Type)}:   _{rew.Amount}_\r\n";
+                }
+
+                notifyData.Message += $"\r\n{Emoji.RadioactiveSign} РАД:   _{history.Consequences.Rads}_\r\n" +
+                    $"{Emoji.Heart} Урон:   _{history.Consequences.Damage}_";
 
                 EventsTimer timer = new EventsTimer()
                 {
@@ -395,11 +403,11 @@ namespace HITteamBot
 
                 await botClient.SendTextMessageAsync(
                             chatId: callbackQuery.Message.Chat.Id,
-                            text: "",
+                            text: $"_{character.Name}_ отправился на _{history.ActionName.Replace("_", " ")}_!",
                             parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
                             cancellationToken: cancellationToken);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
 
             }
@@ -411,6 +419,19 @@ namespace HITteamBot
             {
                 NotifyData notifyData = (NotifyData)obj;
                 BaseController.RemoveTimer(notifyData.Timer);
+
+                switch (notifyData.NotifiedBy)
+                {
+                    case NotifiedBy.None:
+                        break;
+                    case NotifiedBy.Action:
+                        await ActionsController.GiveOutRewardsFromActions(DateTime.Now);
+                        await ActionsController.GiveOutRewardsFromActions(DateTime.Now.AddDays(-1));
+                        break;
+                    default:
+                        break;
+                }
+
                 await notifyData.BotClient.SendTextMessageAsync(
                                 chatId: notifyData.Chat.Id,
                                 text: notifyData.Message,

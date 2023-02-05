@@ -1,1 +1,1 @@
-{"Name":"Разведка_местности","Type":0,"DurationInMinutes":5,"Rewards":[{"Type":0,"Amount":30},{"Type":1,"Amount":10}],"Consequences":{"Rads":60,"Damage":40}}
+{"Name":"Разведка_местности","Type":0,"DurationInMinutes":1,"Rewards":[{"Type":0,"Amount":30},{"Type":1,"Amount":10}],"Consequences":{"Rads":60,"Damage":40}}

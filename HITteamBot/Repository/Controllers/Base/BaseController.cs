@@ -20,7 +20,7 @@ namespace HITteamBot.Repository.Controllers.Base
         {
             try
             {
-                //timer.Timer?.Dispose();
+                timer?.Timer?.Dispose();
                 return Program.Events.Remove(timer);
             }
             catch (Exception)

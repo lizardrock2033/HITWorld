@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -213,6 +214,7 @@ namespace HITteamBot.Repository.Controllers
                             StartDate = DateTime.Now,
                             FinishDate = DateTime.Now.AddMinutes(action.DurationInMinutes),
                             Rewards = action.Rewards,
+                            IsRewarded = false,
                             Consequences = new ActionConsequences()
                             {
                                 Rads = (short)(action.Consequences.Rads + character.Level * 3 - random.Next(character.Characteristics.Attributes.Luck * 10) - character.Characteristics.Attributes.Endurance * 3),
@@ -225,10 +227,10 @@ namespace HITteamBot.Repository.Controllers
                             switch (rew.Type)
                             {
                                 case ActionRewardType.Experience:
-                                    rew.Amount += rew.Amount * (int)(character.Characteristics.Attributes.Intellegence * 0.03);
+                                    rew.Amount += (long)(rew.Amount * (character.Characteristics.Attributes.Intellegence * 0.03f));
                                     break;
                                 case ActionRewardType.Caps:
-                                    rew.Amount += (rew.Amount * (int)(character.Characteristics.Attributes.Perception * 0.01) + random.Next(character.Characteristics.Attributes.Luck + 1) * character.Level);
+                                    rew.Amount += (long)(rew.Amount * (character.Characteristics.Attributes.Perception * 0.01f) + random.Next(character.Characteristics.Attributes.Luck + 1) * character.Level);
                                     break;
                                 case ActionRewardType.Junk:
                                     break;
@@ -240,7 +242,11 @@ namespace HITteamBot.Repository.Controllers
                         }
 
                         if (System.IO.File.Exists(historyPath)) System.IO.File.AppendAllText(historyPath, JsonConvert.SerializeObject(actionHistory));
-                        else System.IO.File.WriteAllText(historyPath, JsonConvert.SerializeObject(actionHistory));
+                        else {
+                            List<ActionHistory> histories = new List<ActionHistory>();
+                            histories.Add(actionHistory);
+                            System.IO.File.WriteAllText(historyPath, JsonConvert.SerializeObject(histories));
+                        }
                     });
                 }
             }
@@ -249,6 +255,58 @@ namespace HITteamBot.Repository.Controllers
                 
             }
             return actionHistory;
+        }
+
+        public static async Task<bool> GiveOutRewardsFromActions(DateTime date)
+        {
+            bool response = false;
+            List<ActionHistory> histories = new List<ActionHistory>();
+            try
+            {
+                string historyPath = Program.HistoryDirectory + $@"\Actions\{date.ToString("dd-MM-yyyy")}.json";
+                if (System.IO.File.Exists(historyPath))
+                {
+                    await Task.Factory.StartNew(() =>
+                    {
+                        histories = (List<ActionHistory>)JsonConvert.DeserializeObject<IEnumerable<ActionHistory>>(System.IO.File.ReadAllText(historyPath));
+                        foreach (var history in histories.Where(s => s.IsRewarded == false && s.FinishDate <= DateTime.Now))
+                        {
+                            Entities.Characters.Character character = Characters.CharactersController.GetCharacter(history.Username).Result;
+                            character.Characteristics.Health -= history.Consequences.Damage;
+                            if (character.Characteristics.Health <= 0) character.LifeState = Entities.Characters.LifeStates.Unconscious;
+                            character.Characteristics.Rads += history.Consequences.Rads;
+                            if (character.Characteristics.Rads >= 1000) character.LifeState = Entities.Characters.LifeStates.Dead;
+                            foreach (var rew in history.Rewards)
+                            {
+                                switch (rew.Type)
+                                {
+                                    case ActionRewardType.Experience:
+                                        character.Characteristics.Experience += (int)rew.Amount;
+                                        break;
+                                    case ActionRewardType.Caps:
+                                        character.Inventory.Caps += rew.Amount;
+                                        break;
+                                    case ActionRewardType.Junk:
+                                        break;
+                                    case ActionRewardType.Item:
+                                        break;
+                                    default:
+                                        break;
+                                }
+                            }
+                            history.IsRewarded = true;
+                            Characters.CharactersController.SaveCharacter(character);
+                        }
+                        System.IO.File.WriteAllText(historyPath, JsonConvert.SerializeObject(histories));
+                    });
+                    response = true;
+                }
+            }
+            catch (Exception)
+            {
+
+            }
+            return response;
         }
     }
 }

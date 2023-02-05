@@ -15,5 +15,12 @@ namespace HITteamBot.Repository.Entities.Base
         public string Username { get; set; }
         public string Message { get; set; }
         public CancellationToken CancellationToken { get; set; }
+        public NotifiedBy NotifiedBy { get; set; }
+    }
+
+    public enum NotifiedBy
+    {
+        None,
+        Action
     }
 }
