@@ -31,7 +31,7 @@ namespace HITteamBot.Repository.Controllers.Characters
                 string userCharacterDirectory = userDirectory + $"\\Character";
                 if (!Directory.Exists(userDirectory)) Directory.CreateDirectory(userDirectory);
                 if (!Directory.Exists(userCharacterDirectory)) Directory.CreateDirectory(userCharacterDirectory);
-                if ((bool)GetCharacter(strings[0])?.IsActive) return "У вас уже есть персонаж";
+                if ((bool)GetCharacter(strings[0]).Result.IsActive) return "У вас уже есть персонаж";
 
                 Character newCharacter = new Character()
                 {
@@ -111,7 +111,7 @@ namespace HITteamBot.Repository.Controllers.Characters
             {
                 string[] strings = query.Trim().Split(new char[] { ' ' });
                 string userCharacterDirectory = BaseController.GetUserDirectory(strings[0]) + $"\\Character";
-                Character character = GetCharacter(strings[0]);
+                Character character = await GetCharacter(strings[0]);
                 if (character.Characteristics.Attributes.IsSet) return "Вы уже распределили очки характеристик";
 
                 if (character.IsActive)
@@ -168,7 +168,7 @@ namespace HITteamBot.Repository.Controllers.Characters
             {
                 string[] strings = query.Trim().Split(new char[] { ' ' });
                 string userCharacterDirectory = BaseController.GetUserDirectory(strings[0]) + $"\\Character";
-                Character character = GetCharacter(strings[0]);
+                Character character = await GetCharacter(strings[0]);
                 if (character.IsActive)
                 {
                     character.Avatar = strings[1];
@@ -195,7 +195,7 @@ namespace HITteamBot.Repository.Controllers.Characters
                 if (Directory.Exists(userCharacterDirectory))
                 {
                     Character character = new Character();
-                    Task task = Task.Factory.StartNew(() => { character = GetCharacter(username); });
+                    Task task = Task.Factory.StartNew(() => { character = GetCharacter(username).Result; });
                     await task;
                     string info = "Персонаж не найден";
                     if (character.IsActive)
@@ -228,7 +228,7 @@ namespace HITteamBot.Repository.Controllers.Characters
             }
         }
 
-        public static Character GetCharacter(string username)
+        public static async Task<Character> GetCharacter(string username)
         {
             List<Character> charactersList = new List<Character>();
             Character character = new Character();
@@ -237,13 +237,15 @@ namespace HITteamBot.Repository.Controllers.Characters
                 string characterPath = BaseController.GetUserDirectory(username) + $@"\Character";
                 if (Directory.Exists(characterPath))
                 {
-                    foreach (var ch in Directory.GetFiles(characterPath))
+                    await Task.Factory.StartNew(() =>
                     {
-                        charactersList.Add(JsonConvert.DeserializeObject<Character>(System.IO.File.ReadAllText(ch)));
-                    }
-                    character = charactersList.Where(i => i.IsActive).FirstOrDefault() ?? new Character();
+                        foreach (var ch in Directory.GetFiles(characterPath))
+                        {
+                            charactersList.Add(JsonConvert.DeserializeObject<Character>(System.IO.File.ReadAllText(ch)));
+                        }
+                        character = charactersList.Where(i => i.IsActive).FirstOrDefault() ?? new Character();
+                    });
                 }
-
             }
             catch (Exception)
             {
@@ -271,7 +273,7 @@ namespace HITteamBot.Repository.Controllers.Characters
         {
             try
             {
-                Character character = GetCharacter(username);
+                Character character = GetCharacter(username).Result;
                 character.IsActive = false;
                 SaveCharacter(character);
             }

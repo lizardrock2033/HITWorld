@@ -29,7 +29,8 @@ namespace HITteamBot.Repository.Controllers
                 await Task.Factory.StartNew(() => { System.IO.File.WriteAllText(path, JsonConvert.SerializeObject(action)); });
 
                 return $"Действие {action.Name} сохранено\r\n\r\n" +
-                    $"/addActionReward название exploring/trading/fight experience/caps/junk/item количество";
+                    $"/addActionReward название exploring/trading/fight experience/caps/junk/item количество\r\n\r\n" +
+                    $"/addActionConseq название exploring/trading/fight rads damage";
             }
             catch (Exception)
             {
@@ -55,6 +56,34 @@ namespace HITteamBot.Repository.Controllers
                     await Task.Factory.StartNew(() => { System.IO.File.WriteAllText(path, JsonConvert.SerializeObject(action)); });
 
                     return $"Награда {data[2]} за действие {data[0]} в количестве {data[3]} добавлена";
+                }
+                else return "Файл не найден";
+            }
+            catch (Exception)
+            {
+                return "Ошибка";
+            }
+        }
+
+        public static async Task<string> AddConsequencesToAction(string query)
+        {
+            try
+            {
+                string[] data = query.Trim().Split(new char[] { ' ' });
+                string path = Program.ActionsDirectory + $@"\{data[1]}\{data[0]}.json";
+                if (System.IO.File.Exists(path))
+                {
+                    await Task.Factory.StartNew(() => {
+                        Entities.Actions.Action action = JsonConvert.DeserializeObject<Entities.Actions.Action>(System.IO.File.ReadAllText(path));
+                        action.Consequences = new ActionConsequences()
+                        {
+                            Rads = Int16.Parse(data[2]),
+                            Damage = Int16.Parse(data[3])
+                        };
+                        System.IO.File.WriteAllText(path, JsonConvert.SerializeObject(action));
+                    });
+
+                    return $"Последствия Rads: {data[2]}, Damage: {data[3]} добавлены";
                 }
                 else return "Файл не найден";
             }
@@ -161,10 +190,10 @@ namespace HITteamBot.Repository.Controllers
             return info;
         }
 
-        public static async Task<string> StartAction(string username, string path)
+        public static async Task<ActionHistory> StartAction(string username, string path)
         {
-            string response = "Ошибка отправки на задание";
             Entities.Actions.Action action = new Entities.Actions.Action();
+            ActionHistory actionHistory = new ActionHistory();
             try
             {
                 string historyPath = Program.HistoryDirectory + $@"\Actions\{DateTime.Now.ToString("dd-MM-yyyy")}.json";
@@ -173,21 +202,23 @@ namespace HITteamBot.Repository.Controllers
                 if (System.IO.File.Exists(path))
                 {
                     await Task.Factory.StartNew(() => {
+                        Random random = new Random();
                         action = JsonConvert.DeserializeObject<Entities.Actions.Action>(System.IO.File.ReadAllText(path));
-                        ActionHistory actionHistory = new ActionHistory()
+                        Entities.Characters.Character character = Characters.CharactersController.GetCharacter(username).Result;
+                        actionHistory = new ActionHistory()
                         {
                             Username = username,
                             ActionType = action.Type,
                             ActionName = action.Name,
                             StartDate = DateTime.Now,
                             FinishDate = DateTime.Now.AddMinutes(action.DurationInMinutes),
-                            Rewards = action.Rewards
+                            Rewards = action.Rewards,
+                            Consequences = new ActionConsequences()
+                            {
+                                Rads = (short)(action.Consequences.Rads + character.Level * 3 - random.Next(character.Characteristics.Attributes.Luck * 10) - character.Characteristics.Attributes.Endurance * 3),
+                                Damage = action.Consequences.Damage + character.Level - character.Characteristics.Attributes.Endurance * 2 - random.Next(character.Characteristics.Attributes.Luck * 5)
+                            }
                         };
-
-                        Entities.Characters.Character character = Characters.CharactersController.GetCharacter(username);
-
-                        actionHistory.Consequences.Rads = character.Characteristics.Rads;
-                        actionHistory.Consequences.Damage = character.Characteristics.Health;
 
                         foreach (var rew in actionHistory.Rewards)
                         {
@@ -197,7 +228,6 @@ namespace HITteamBot.Repository.Controllers
                                     rew.Amount += rew.Amount * (int)(character.Characteristics.Attributes.Intellegence * 0.03);
                                     break;
                                 case ActionRewardType.Caps:
-                                    Random random = new Random();
                                     rew.Amount += (rew.Amount * (int)(character.Characteristics.Attributes.Perception * 0.01) + random.Next(character.Characteristics.Attributes.Luck + 1) * character.Level);
                                     break;
                                 case ActionRewardType.Junk:
@@ -211,8 +241,6 @@ namespace HITteamBot.Repository.Controllers
 
                         if (System.IO.File.Exists(historyPath)) System.IO.File.AppendAllText(historyPath, JsonConvert.SerializeObject(actionHistory));
                         else System.IO.File.WriteAllText(historyPath, JsonConvert.SerializeObject(actionHistory));
-
-                        response = $"*{character.Name}* отправился на _{action.Name.Replace("_", " ")}_! Вернется в {actionHistory.FinishDate.ToString("HH:mm")}";
                     });
                 }
             }
@@ -220,7 +248,7 @@ namespace HITteamBot.Repository.Controllers
             {
                 
             }
-            return response;
+            return actionHistory;
         }
     }
 }

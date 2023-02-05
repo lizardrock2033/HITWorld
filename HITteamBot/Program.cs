@@ -122,6 +122,10 @@ namespace HITteamBot
                             if (BaseController.CheckPermissions(message.From.Username, PermissionsType.Moderator).Result)
                                 _ = botClient.SendTextMessageAsync(message.Chat.Id, await ActionsController.AddRewardToAction(message.Text.Replace("/addActionReward", "").Replace($"@{botClient.GetMeAsync().Result.FirstName}", "")));
                             return;
+                        case "addactionconseq":
+                            if (BaseController.CheckPermissions(message.From.Username, PermissionsType.Moderator).Result)
+                                _ = botClient.SendTextMessageAsync(message.Chat.Id, await ActionsController.AddConsequencesToAction(message.Text.Replace("/addActionConseq", "").Replace($"@{botClient.GetMeAsync().Result.FirstName}", "")));
+                            return;
                         default:
                             break;
                     }
@@ -209,7 +213,7 @@ namespace HITteamBot
                                     return;
                                 case SettingsMenu.NewAction:
                                     if (BaseController.CheckPermissions(update.CallbackQuery.From.Username, PermissionsType.Moderator).Result)
-                                        _ = botClient.SendTextMessageAsync(callbackMessage.Chat.Id, "/newAction название Exploring/Trading/Fight продолжительность_в_минутах");
+                                        _ = botClient.SendTextMessageAsync(callbackMessage.Chat.Id, "/newAction название Exploring/Trading/Fight продолжительность в минутах");
                                     return;
                             }
                             return;
@@ -364,13 +368,18 @@ namespace HITteamBot
             {
                 string path = await ActionsController.GetActionPath(query);
                 Repository.Entities.Actions.Action action = await ActionsController.GetAction(path);
+                Repository.Entities.Characters.Character character = await CharactersController.GetCharacter(callbackQuery.From.Username);
+                ActionHistory history = await ActionsController.StartAction(callbackQuery.From.Username, path);
                 TimerCallback timerCallback = new TimerCallback(Notify);
                 NotifyData notifyData = new NotifyData()
                 {
                     BotClient = botClient,
                     Chat = callbackQuery.Message.Chat,
                     Username = callbackQuery.From.Username,
-                    Message = $"[{callbackQuery.From.FirstName}](tg://user?id={callbackQuery.From.Id}), ваш персонаж закончил задание!",
+                    Message = $"[{character.Name}](tg://user?id={callbackQuery.From.Id}) вернулся с задания!\r\n\r\n" +
+                    $"Получено:\r\n" +
+                    $"" +
+                    $"Последствия:\r\n",
                     CancellationToken = cancellationToken
                 };
 
@@ -386,7 +395,7 @@ namespace HITteamBot
 
                 await botClient.SendTextMessageAsync(
                             chatId: callbackQuery.Message.Chat.Id,
-                            text: await ActionsController.StartAction(callbackQuery.From.Username, path),
+                            text: "",
                             parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
                             cancellationToken: cancellationToken);
             }
