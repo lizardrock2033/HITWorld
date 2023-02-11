@@ -42,7 +42,7 @@ namespace HITteamBot
             {
                 Console.WriteLine(bot.GetMeAsync().Result.FirstName + " запущен...");
                 CreateDirectories();
-                _ = ActionsController.GiveOutRewardsFromActions(DateTime.Now);
+                ActionsController.GiveOutLast2DaysRewards();
 
                 var cts = new CancellationTokenSource();
                 var cancellationToken = cts.Token;
@@ -299,7 +299,7 @@ namespace HITteamBot
                     InlineKeyboardButton.WithCallbackData("Ежедневные задания", $"{(int)MainShedule.GameMenu}_{(int)GameMenu.ActionsList}"),
                     InlineKeyboardButton.WithCallbackData("Сломать бота", "woop")
                 },
-                new[] { InlineKeyboardButton.WithCallbackData("Найстройки персонажа", $"{(int)MainShedule.GameMenu}_{(int)GameMenu.CharacterSettings}") }
+                new[] { InlineKeyboardButton.WithCallbackData("Настройки персонажа", $"{(int)MainShedule.GameMenu}_{(int)GameMenu.CharacterSettings}") }
             });
 
                 if (message.Text.ToLower().Replace("/", "").Replace($"@{botClient.GetMeAsync().Result.FirstName.ToLower()}", "") == "character") await botClient.SendTextMessageAsync(
@@ -370,6 +370,7 @@ namespace HITteamBot
                 string path = await ActionsController.GetActionPath(query);
                 Repository.Entities.Actions.Action action = await ActionsController.GetAction(path);
                 Repository.Entities.Characters.Character character = await CharactersController.GetCharacter(callbackQuery.From.Username);
+                if (await ActionsController.IsInAction(callbackQuery.From.Username)) throw new Exception($"_{character.Name}_ уже на задании!");
                 ActionHistory history = await ActionsController.StartAction(callbackQuery.From.Username, path);
                 TimerCallback timerCallback = new TimerCallback(Notify);
                 NotifyData notifyData = new NotifyData()
@@ -409,7 +410,11 @@ namespace HITteamBot
             }
             catch (Exception ex)
             {
-
+                await botClient.SendTextMessageAsync(
+                            chatId: callbackQuery.Message.Chat.Id,
+                            text: ex.Message,
+                            parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
+                            cancellationToken: cancellationToken);
             }
         }
 
@@ -425,8 +430,7 @@ namespace HITteamBot
                     case NotifiedBy.None:
                         break;
                     case NotifiedBy.Action:
-                        await ActionsController.GiveOutRewardsFromActions(DateTime.Now);
-                        await ActionsController.GiveOutRewardsFromActions(DateTime.Now.AddDays(-1));
+                        ActionsController.GiveOutLast2DaysRewards();
                         break;
                     default:
                         break;

@@ -241,12 +241,10 @@ namespace HITteamBot.Repository.Controllers
                             }
                         }
 
-                        if (System.IO.File.Exists(historyPath)) System.IO.File.AppendAllText(historyPath, JsonConvert.SerializeObject(actionHistory));
-                        else {
-                            List<ActionHistory> histories = new List<ActionHistory>();
-                            histories.Add(actionHistory);
-                            System.IO.File.WriteAllText(historyPath, JsonConvert.SerializeObject(histories));
-                        }
+                        List<ActionHistory> histories = new List<ActionHistory>();
+                        if (System.IO.File.Exists(historyPath)) histories = JsonConvert.DeserializeObject<List<ActionHistory>>(System.IO.File.ReadAllText(historyPath));
+                        histories.Add(actionHistory);
+                        System.IO.File.WriteAllText(historyPath, JsonConvert.SerializeObject(histories));
                     });
                 }
             }
@@ -255,6 +253,44 @@ namespace HITteamBot.Repository.Controllers
                 
             }
             return actionHistory;
+        }
+
+        public static async Task<bool> IsInAction(string username)
+        {
+            bool response = false;
+            List<ActionHistory> histories = new List<ActionHistory>();
+            try
+            {
+                string historyPath = Program.HistoryDirectory + $@"\Actions\{DateTime.Now.ToString("dd-MM-yyyy")}.json";
+                string yesterdayHistoryPath = Program.HistoryDirectory + $@"\Actions\{DateTime.Now.AddDays(-1).ToString("dd-MM-yyyy")}.json";
+                if (System.IO.File.Exists(historyPath))
+                {
+                    await Task.Factory.StartNew(() =>
+                    {
+                        histories = (List<ActionHistory>)JsonConvert.DeserializeObject<IEnumerable<ActionHistory>>(System.IO.File.ReadAllText(historyPath));
+                        if (System.IO.File.Exists(yesterdayHistoryPath)) histories.AddRange((List<ActionHistory>)JsonConvert.DeserializeObject<IEnumerable<ActionHistory>>(System.IO.File.ReadAllText(yesterdayHistoryPath)));
+                        response = histories.Any(s => s.Username == username && s.FinishDate >= DateTime.Now);
+                    });
+                }
+            }
+            catch (Exception)
+            {
+
+            }
+            return response;
+        }
+
+        public static async void GiveOutLast2DaysRewards()
+        {
+            try
+            {
+                await GiveOutRewardsFromActions(DateTime.Now);
+                await GiveOutRewardsFromActions(DateTime.Now.AddDays(-1));
+            }
+            catch (Exception)
+            {
+
+            }
         }
 
         public static async Task<bool> GiveOutRewardsFromActions(DateTime date)
