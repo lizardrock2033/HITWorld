@@ -6,11 +6,12 @@ namespace HITteamBot.Repository.Entities.Items.Chemicals
 {
     public class Chemicals
     {
-        public List<Stimpack> Stimpacks { get; set; }
-        public List<Buffout> Buffouts { get; set; }
-        public List<Mentats> Mentats { get; set; }
-        public List<Psyho> Psyhos { get; set; }
-        public List<RadAway> RadAways { get; set; }
-        public List<RadX> RadXes { get; set; }
+        public Stimpack Stimpacks { get; set; }
+        public Buffout Buffouts { get; set; }
+        public Mentats Mentats { get; set; }
+        public Psyho Psyhos { get; set; }
+        public MedX MedXes { get; set; }
+        public RadAway RadAways { get; set; }
+        public RadX RadXes { get; set; }
     }
 }

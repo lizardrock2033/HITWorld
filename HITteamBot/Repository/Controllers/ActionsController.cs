@@ -308,8 +308,8 @@ namespace HITteamBot.Repository.Controllers
                         foreach (var history in histories.Where(s => s.IsRewarded == false && s.FinishDate <= DateTime.Now))
                         {
                             Entities.Characters.Character character = Characters.CharactersController.GetCharacter(history.Username).Result;
-                            character.Characteristics.Health -= history.Consequences.Damage;
-                            if (character.Characteristics.Health <= 0) character.LifeState = Entities.Characters.LifeStates.Unconscious;
+                            character.Characteristics.CurrentHealth -= history.Consequences.Damage;
+                            if (character.Characteristics.CurrentHealth <= 0) character.LifeState = Entities.Characters.LifeStates.Unconscious;
                             character.Characteristics.Rads += history.Consequences.Rads;
                             if (character.Characteristics.Rads >= 1000) character.LifeState = Entities.Characters.LifeStates.Dead;
                             foreach (var rew in history.Rewards)

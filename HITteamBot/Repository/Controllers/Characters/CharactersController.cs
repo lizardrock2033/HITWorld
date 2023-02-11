@@ -31,7 +31,7 @@ namespace HITteamBot.Repository.Controllers.Characters
                 string userCharacterDirectory = userDirectory + $"\\Character";
                 if (!Directory.Exists(userDirectory)) Directory.CreateDirectory(userDirectory);
                 if (!Directory.Exists(userCharacterDirectory)) Directory.CreateDirectory(userCharacterDirectory);
-                if ((bool)GetCharacter(strings[0]).Result.IsActive) return "У вас уже есть персонаж";
+                if (GetCharacter(strings[0]).Result.IsActive) return "У вас уже есть персонаж";
 
                 Character newCharacter = new Character()
                 {
@@ -51,7 +51,22 @@ namespace HITteamBot.Repository.Controllers.Characters
                         Caps = 50,
                         Chemicals = new Chemicals()
                         {
-                            Stimpacks = new List<Stimpack>()
+                            Stimpacks = new Stimpack() {
+                                Count = 5,
+                                Effect = new BaseEffects() {
+                                    Type = BaseEffectTypes.Heal,
+                                    Power = 50,
+                                    Duration = 0,
+                                    AvailableTargets = BaseEffectTargets.Any,
+                                    Description = "Восстанавливает здоровье цели при использовании"
+                                }
+                            },
+                            Buffouts = new Buffout() { Count = 0 },
+                            MedXes = new MedX() { Count = 0 },
+                            Mentats = new Mentats() { Count = 0 },
+                            Psyhos = new Psyho() { Count = 0 },
+                            RadAways = new RadAway() { Count = 0 },
+                            RadXes = new RadX() { Count = 0 }
                         },
                         Ammo = new Ammo()
                         {
@@ -60,10 +75,7 @@ namespace HITteamBot.Repository.Controllers.Characters
                             Rockets = new List<Rockets>(),
                             Grenades = new List<Grenades>()
                         },
-                        Junk = new Junk()
-                        {
-
-                        },
+                        Junk = new Junk(),
                         Weapons = new List<Weapon>(),
                         Armor = new List<Armor>(),
                         Clothes = new List<Clothes>()

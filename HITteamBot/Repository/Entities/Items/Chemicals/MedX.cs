@@ -5,7 +5,7 @@ using System.Text;
 
 namespace HITteamBot.Repository.Entities.Items.Chemicals
 {
-    public class RadAway
+    public class MedX
     {
         public int Count { get; set; }
         public BaseEffects Effect { get; set; }
