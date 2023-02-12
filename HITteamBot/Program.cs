@@ -358,6 +358,7 @@ namespace HITteamBot
             try
             {
                 Character character = await CharactersController.GetCharacter(callbackQuery.From.Username);
+                if (string.IsNullOrEmpty(character.Name)) throw new Exception("Персонаж не найден");
                 string info = $"{Emoji.Pager} Инвентарь   _{character.Name}_\r\n\r\n" +
                                 $"{Emoji.WeightLifter} Загруженность:   _{character.Characteristics.CurrentWL} / {character.Characteristics.WeightLimit}_\r\n" +
                                 $"{Emoji.Caps} Крышки:   _{character.Inventory.Caps}_";
@@ -390,9 +391,14 @@ namespace HITteamBot
                             cancellationToken: cancellationToken);
 
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
+                await botClient.EditMessageTextAsync(
+                            chatId: callbackQuery.Message.Chat.Id,
+                            messageId: callbackQuery.Message.MessageId,
+                            text: ex.Message,
+                            parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
+                            cancellationToken: cancellationToken);
             }
         }
 
