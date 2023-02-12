@@ -14,4 +14,15 @@ namespace HITteamBot.Repository.Entities.Items.Chemicals
         public RadAway RadAways { get; set; }
         public RadX RadXes { get; set; }
     }
+
+    public enum ChemicalsInfo
+    {
+        Stimpack,
+        Buffout,
+        Mentats,
+        Psyho,
+        MedX,
+        RadAway,
+        RadX
+    }
 }

@@ -22,6 +22,7 @@ using HITteamBot.Repository.Controllers.Base;
 using HITteamBot.Repository.Entities.Actions;
 using HITteamBot.Repository.Entities.Characters;
 using System.Reflection;
+using HITteamBot.Repository.Entities.Items.Chemicals;
 
 namespace HITteamBot
 {
@@ -83,7 +84,7 @@ namespace HITteamBot
                             Menu(botClient, message.Chat.Id, message.From.Username, cancellationToken);
                             return;
                         case "character":
-                            string charInfo = await CharactersController.GetCharacterInfo(message.From.Username);
+                            string charInfo = await CharactersController.GetCharacterStateInfo(message.From.Username);
                             if (charInfo.Contains("не найден"))
                             {
                                 InlineKeyboardMarkup newCharacter = new InlineKeyboardMarkup(new[] { InlineKeyboardButton.WithCallbackData("Создать персонажа", $"{(int)MainShedule.MainMenu}_{(int)MainMenu.NewCharacter}") });
@@ -150,7 +151,7 @@ namespace HITteamBot
                                                                                     "Пример:\r\n/создать Глория 34 женский");
                                     return;
                                 case MainMenu.Character:
-                                    string charInfo = await CharactersController.GetCharacterInfo(update.CallbackQuery.From.Username);
+                                    string charInfo = await CharactersController.GetCharacterStateInfo(update.CallbackQuery.From.Username);
                                     if (charInfo.Contains("не найден"))
                                     {
                                         InlineKeyboardMarkup newCharacter = new InlineKeyboardMarkup(new[] { InlineKeyboardButton.WithCallbackData("Создать персонажа", $"{(int)MainShedule.MainMenu}_{(int)MainMenu.NewCharacter}") });
@@ -164,7 +165,7 @@ namespace HITteamBot
                                                                                 "Пример:\r\n/аватар 🧔🏻‍♀️");
                                     return;
                                 default:
-                                    string backToInfo = await CharactersController.GetCharacterInfo(update.CallbackQuery.From.Username);
+                                    string backToInfo = await CharactersController.GetCharacterStateInfo(update.CallbackQuery.From.Username);
                                     if (backToInfo.Contains("не найден"))
                                     {
                                         InlineKeyboardMarkup newCharacter = new InlineKeyboardMarkup(new[] { InlineKeyboardButton.WithCallbackData("Создать персонажа", $"{(int)MainShedule.MainMenu}_{(int)MainMenu.NewCharacter}") });
@@ -193,7 +194,27 @@ namespace HITteamBot
                                         switch ((CharacterInventory)Enum.Parse(typeof(CharacterInventory), callback[2]))
                                         {
                                             case CharacterInventory.Chemicals:
-                                                GetInvChemicals(botClient, update.CallbackQuery, cancellationToken);
+                                                if (callback.Length >= 4) {
+                                                    if (callback.Length >= 5)
+                                                    {
+                                                        switch ((InventoryUsage)Enum.Parse(typeof(InventoryUsage), callback[4]))
+                                                        {
+                                                            case InventoryUsage.Use:
+                                                                UseChemical(botClient, update.CallbackQuery, (ChemicalsInfo)Enum.Parse(typeof(ChemicalsInfo), callback[3]), cancellationToken);
+                                                                break;
+                                                            case InventoryUsage.Give:
+                                                                break;
+                                                            case InventoryUsage.Sell:
+                                                                break;
+                                                            case InventoryUsage.Drop:
+                                                                break;
+                                                            default:
+                                                                break;
+                                                        }
+                                                    }
+                                                    else GetChemicalInfo(botClient, update.CallbackQuery, (ChemicalsInfo)Enum.Parse(typeof(ChemicalsInfo), callback[3]), cancellationToken);
+                                                }
+                                                else GetInvChemicals(botClient, update.CallbackQuery, cancellationToken);
                                                 break;
                                             case CharacterInventory.Junk:
                                                 GetInvJunk(botClient, update.CallbackQuery, cancellationToken);
@@ -354,6 +375,8 @@ namespace HITteamBot
             }
         }
 
+        #region Инвентарь
+
         public static async void GetCharacterInventory(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken)
         {
             try
@@ -408,30 +431,113 @@ namespace HITteamBot
             try
             {
                 Character character = await CharactersController.GetCharacter(callbackQuery.From.Username);
-                string info = $"{Emoji.Chemicals} Химикаты   _{character.Name}_\r\n\r\n" +
-                                $"{Emoji.Stimpack} Стимуляторы:   _{character.Inventory.Chemicals.Stimpacks.Count}_\r\n" +
-                                $"{Emoji.Muscle} Баффаут:   _{character.Inventory.Chemicals.Buffouts.Count}_\r\n" +
-                                $"{Emoji.Brain} Ментаты:   _{character.Inventory.Chemicals.Mentats.Count}_\r\n" +
-                                $"{Emoji.Psycho} Психо:   _{character.Inventory.Chemicals.Psyhos.Count}_\r\n" +
-                                $"{Emoji.DNA} МедХ:   _{character.Inventory.Chemicals.MedXes.Count}_\r\n" +
-                                $"{Emoji.RadAway} Антирадин:   _{character.Inventory.Chemicals.RadAways.Count}_\r\n" +
-                                $"{Emoji.RadX} РадХ:   _{character.Inventory.Chemicals.RadXes.Count}_";
 
+                // Я знаю, что попаду в ад за это
                 List<InlineKeyboardButton[]> availableToUse = new List<InlineKeyboardButton[]>();
+                if (character.Inventory.Chemicals.Stimpacks.Count > 0) availableToUse.Add(new[] { InlineKeyboardButton.WithCallbackData($"{Dictionaries.GetChemical(ChemicalsInfo.Stimpack)}:   {character.Inventory.Chemicals.Stimpacks.Count}", $"{(int)MainShedule.GameMenu}_{(int)GameMenu.Inventory}_{(int)CharacterInventory.Chemicals}_{(int)ChemicalsInfo.Stimpack}") });
+                if (character.Inventory.Chemicals.Buffouts.Count > 0) availableToUse.Add(new[] { InlineKeyboardButton.WithCallbackData($"{Dictionaries.GetChemical(ChemicalsInfo.Buffout)}:   {character.Inventory.Chemicals.Buffouts.Count}", $"{(int)MainShedule.GameMenu}_{(int)GameMenu.Inventory}_{(int)CharacterInventory.Chemicals}_{(int)ChemicalsInfo.Buffout}") });
+                if (character.Inventory.Chemicals.Mentats.Count > 0) availableToUse.Add(new[] { InlineKeyboardButton.WithCallbackData($"{Dictionaries.GetChemical(ChemicalsInfo.Mentats)}:   {character.Inventory.Chemicals.Mentats.Count}", $"{(int)MainShedule.GameMenu}_{(int)GameMenu.Inventory}_{(int)CharacterInventory.Chemicals}_{(int)ChemicalsInfo.Mentats}") });
+                if (character.Inventory.Chemicals.Psyhos.Count > 0) availableToUse.Add(new[] { InlineKeyboardButton.WithCallbackData($"{Dictionaries.GetChemical(ChemicalsInfo.Psyho)}:   {character.Inventory.Chemicals.Psyhos.Count}", $"{(int)MainShedule.GameMenu}_{(int)GameMenu.Inventory}_{(int)CharacterInventory.Chemicals}_{(int)ChemicalsInfo.Psyho}") });
+                if (character.Inventory.Chemicals.MedXes.Count > 0) availableToUse.Add(new[] { InlineKeyboardButton.WithCallbackData($"{Dictionaries.GetChemical(ChemicalsInfo.MedX)}:   {character.Inventory.Chemicals.MedXes.Count}", $"{(int)MainShedule.GameMenu}_{(int)GameMenu.Inventory}_{(int)CharacterInventory.Chemicals}_{(int)ChemicalsInfo.MedX}") });
+                if (character.Inventory.Chemicals.RadAways.Count > 0) availableToUse.Add(new[] { InlineKeyboardButton.WithCallbackData($"{Dictionaries.GetChemical(ChemicalsInfo.RadAway)}:   {character.Inventory.Chemicals.RadAways.Count}", $"{(int)MainShedule.GameMenu}_{(int)GameMenu.Inventory}_{(int)CharacterInventory.Chemicals}_{(int)ChemicalsInfo.RadAway}") });
+                if (character.Inventory.Chemicals.RadXes.Count > 0) availableToUse.Add(new[] { InlineKeyboardButton.WithCallbackData($"{Dictionaries.GetChemical(ChemicalsInfo.RadX)}:   {character.Inventory.Chemicals.RadXes.Count}", $"{(int)MainShedule.GameMenu}_{(int)GameMenu.Inventory}_{(int)CharacterInventory.Chemicals}_{(int)ChemicalsInfo.RadX}") });
+                availableToUse.Add(new[] { InlineKeyboardButton.WithCallbackData("Назад", $"{(int)MainShedule.GameMenu}_{(int)GameMenu.Inventory}") });
+                InlineKeyboardMarkup inlineKeyboard = new InlineKeyboardMarkup(availableToUse);
 
-                foreach (FieldInfo field in character.Inventory.Chemicals.GetType().GetFields())
+                await botClient.EditMessageTextAsync(
+                            chatId: callbackQuery.Message.Chat.Id,
+                            messageId: callbackQuery.Message.MessageId,
+                            text: $"{Emoji.Chemicals} Химикаты   _{character.Name}_",
+                            parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
+                            replyMarkup: inlineKeyboard,
+                            cancellationToken: cancellationToken);
+            }
+            catch (Exception)
+            {
+
+            }
+        }
+
+        public static async void GetChemicalInfo(ITelegramBotClient botClient, CallbackQuery callbackQuery, ChemicalsInfo chemical, CancellationToken cancellationToken)
+        {
+            try
+            {
+                Character character = await CharactersController.GetCharacter(callbackQuery.From.Username);
+                string info = "";
+                switch (chemical)
                 {
-                    var s = field.GetValue(character.Inventory.Chemicals);
+                    case ChemicalsInfo.Stimpack:
+                        info = $"{Dictionaries.GetChemical(chemical)}:   _{character.Inventory.Chemicals.Stimpacks.Count}_\r\n" +
+                                $"_{character.Inventory.Chemicals.Stimpacks.Effect.Description}_\r\n" +
+                                $"Мощность:   _{character.Inventory.Chemicals.Stimpacks.Effect.Power}_";
+                        break;
+                    case ChemicalsInfo.Buffout:
+                        info = $"{Dictionaries.GetChemical(chemical)}:   _{character.Inventory.Chemicals.Buffouts.Count}_\r\n" +
+                                $"_{character.Inventory.Chemicals.Buffouts.Effect.Description}_\r\n" +
+                                $"Мощность:   _{character.Inventory.Chemicals.Buffouts.Effect.Power}_";
+                        break;
+                    case ChemicalsInfo.Mentats:
+                        info = $"{Dictionaries.GetChemical(chemical)}:   _{character.Inventory.Chemicals.Mentats.Count}_\r\n" +
+                                $"_{character.Inventory.Chemicals.Mentats.Effect.Description}_\r\n" +
+                                $"Мощность:   _{character.Inventory.Chemicals.Mentats.Effect.Power}_";
+                        break;
+                    case ChemicalsInfo.Psyho:
+                        info = $"{Dictionaries.GetChemical(chemical)}:   _{character.Inventory.Chemicals.Psyhos.Count}_\r\n" +
+                                $"_{character.Inventory.Chemicals.Psyhos.Effect.Description}_\r\n" +
+                                $"Мощность:   _{character.Inventory.Chemicals.Psyhos.Effect.Power}_";
+                        break;
+                    case ChemicalsInfo.MedX:
+                        info = $"{Dictionaries.GetChemical(chemical)}:   _{character.Inventory.Chemicals.MedXes.Count}_\r\n" +
+                                $"_{character.Inventory.Chemicals.MedXes.Effect.Description}_\r\n" +
+                                $"Мощность:   _{character.Inventory.Chemicals.MedXes.Effect.Power}_";
+                        break;
+                    case ChemicalsInfo.RadAway:
+                        info = $"{Dictionaries.GetChemical(chemical)}:   _{character.Inventory.Chemicals.RadAways.Count}_\r\n" +
+                                $"_{character.Inventory.Chemicals.RadAways.Effect.Description}_\r\n" +
+                                $"Мощность:   _{character.Inventory.Chemicals.RadAways.Effect.Power}_";
+                        break;
+                    case ChemicalsInfo.RadX:
+                        info = $"{Dictionaries.GetChemical(chemical)}:   _{character.Inventory.Chemicals.RadXes.Count}_\r\n" +
+                                $"_{character.Inventory.Chemicals.RadXes.Effect.Description}_\r\n" +
+                                $"Мощность:   _{character.Inventory.Chemicals.RadXes.Effect.Power}_";
+                        break;
+                    default:
+                        break;
                 }
 
-                availableToUse.Add(new[] { InlineKeyboardButton.WithCallbackData($"", $"") });
-
-                InlineKeyboardMarkup inlineKeyboard = new InlineKeyboardMarkup(new[] { InlineKeyboardButton.WithCallbackData("Назад", $"{(int)MainShedule.GameMenu}_{(int)GameMenu.Inventory}") });
+                InlineKeyboardMarkup inlineKeyboard = new InlineKeyboardMarkup(new[] {
+                    new[] { InlineKeyboardButton.WithCallbackData("Использовать", $"{(int)MainShedule.GameMenu}_{(int)GameMenu.Inventory}_{(int)CharacterInventory.Chemicals}_{(int)chemical}_{(int)InventoryUsage.Use}") },
+                    new[] { InlineKeyboardButton.WithCallbackData("Передать", $"{(int)MainShedule.GameMenu}_{(int)GameMenu.Inventory}_{(int)CharacterInventory.Chemicals}_{(int)chemical}_{(int)InventoryUsage.Give}") },
+                    new[] { InlineKeyboardButton.WithCallbackData("Назад", $"{(int)MainShedule.GameMenu}_{(int)GameMenu.Inventory}_{(int)CharacterInventory.Chemicals}") }
+                });
 
                 await botClient.EditMessageTextAsync(
                             chatId: callbackQuery.Message.Chat.Id,
                             messageId: callbackQuery.Message.MessageId,
                             text: info,
+                            parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
+                            replyMarkup: inlineKeyboard,
+                            cancellationToken: cancellationToken);
+            }
+            catch (Exception)
+            {
+
+            }
+        }
+
+        public static async void UseChemical(ITelegramBotClient botClient, CallbackQuery callbackQuery, ChemicalsInfo chemical, CancellationToken cancellationToken)
+        {
+            try
+            {
+                InlineKeyboardMarkup inlineKeyboard = new InlineKeyboardMarkup(new[] {
+                    new[] { InlineKeyboardButton.WithCallbackData("Использовать еще", $"{(int)MainShedule.GameMenu}_{(int)GameMenu.Inventory}_{(int)CharacterInventory.Chemicals}_{(int)chemical}_{(int)InventoryUsage.Use}") },
+                    new[] { InlineKeyboardButton.WithCallbackData("Назад", $"{(int)MainShedule.GameMenu}_{(int)GameMenu.Inventory}_{(int)CharacterInventory.Chemicals}") }
+                });
+
+                await botClient.EditMessageTextAsync(
+                            chatId: callbackQuery.Message.Chat.Id,
+                            messageId: callbackQuery.Message.MessageId,
+                            text: await CharactersController.UseChemical(callbackQuery.From.Username, chemical),
                             parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
                             replyMarkup: inlineKeyboard,
                             cancellationToken: cancellationToken);
@@ -558,6 +664,10 @@ namespace HITteamBot
                         cancellationToken: cancellationToken);
         }
 
+        #endregion
+
+        #region Действия/Задания
+
         public static async void ActionsListGet(ITelegramBotClient botClient, Message message, ActionType type, CancellationToken cancellationToken)
         {
             try
@@ -580,11 +690,7 @@ namespace HITteamBot
             string[] data = query.Trim().Split(new char[] { ' ' });
             try
             {
-                InlineKeyboardMarkup inlineKeyboard = new InlineKeyboardMarkup(new[]
-                {
-                    InlineKeyboardButton.WithCallbackData("Отправиться", $"{(int)MainShedule.GameMenu}_{(int)GameMenu.StartAction}_{data[0]}_{string.Join('_', data[1..])}"),
-                    InlineKeyboardButton.WithCallbackData("Назад", $"{(int)MainShedule.GameMenu}_{(int)GameMenu.ActionsList}")
-                });
+                InlineKeyboardMarkup inlineKeyboard = new InlineKeyboardMarkup(new[] { InlineKeyboardButton.WithCallbackData("Отправиться", $"{(int)MainShedule.GameMenu}_{(int)GameMenu.StartAction}_{data[0]}_{string.Join('_', data[1..])}") });
                 await botClient.SendTextMessageAsync(
                             chatId: message.Chat.Id,
                             text: await ActionsController.GetActionInfo(query),
@@ -605,7 +711,7 @@ namespace HITteamBot
                 string path = await ActionsController.GetActionPath(query);
                 Repository.Entities.Actions.Action action = await ActionsController.GetAction(path);
                 Character character = await CharactersController.GetCharacter(callbackQuery.From.Username);
-                if (await ActionsController.IsInAction(callbackQuery.From.Username)) throw new Exception($"_{character.Name}_ уже на задании!");
+                if (await ActionsController.CurrentAction(callbackQuery.From.Username) != null) throw new Exception($"_{character.Name}_ уже на задании!");
                 ActionHistory history = await ActionsController.StartAction(callbackQuery.From.Username, path);
                 TimerCallback timerCallback = new TimerCallback(Notify);
                 NotifyData notifyData = new NotifyData()
@@ -637,6 +743,7 @@ namespace HITteamBot
                 notifyData.Timer = timer;
                 Events.Add(timer);
 
+                await botClient.DeleteMessageAsync(callbackQuery.Message.Chat.Id, callbackQuery.Message.MessageId);
                 await botClient.SendTextMessageAsync(
                             chatId: callbackQuery.Message.Chat.Id,
                             text: $"_{character.Name}_ отправился на _{history.ActionName.Replace("_", " ")}_!",
@@ -645,6 +752,7 @@ namespace HITteamBot
             }
             catch (Exception ex)
             {
+                await botClient.DeleteMessageAsync(callbackQuery.Message.Chat.Id, callbackQuery.Message.MessageId);
                 await botClient.SendTextMessageAsync(
                             chatId: callbackQuery.Message.Chat.Id,
                             text: ex.Message,
@@ -652,6 +760,8 @@ namespace HITteamBot
                             cancellationToken: cancellationToken);
             }
         }
+
+        #endregion
 
         public static async void Notify(object obj)
         {
@@ -744,6 +854,8 @@ namespace HITteamBot
         }
     }
 
+    #region Схема перехода меню
+
     enum MainShedule
     {
         MainMenu,
@@ -778,6 +890,14 @@ namespace HITteamBot
         Clothes
     }
 
+    enum InventoryUsage
+    {
+        Use,
+        Give,
+        Sell,
+        Drop
+    }
+
     enum SettingsMenu
     {
         Settings,
@@ -787,4 +907,6 @@ namespace HITteamBot
         NewAction,
         AddRewardsToAction
     }
+
+    #endregion
 }

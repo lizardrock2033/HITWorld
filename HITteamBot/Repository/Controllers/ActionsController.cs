@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using HITteamBot.Repository.Controllers.Characters;
 using HITteamBot.Repository.Entities.Actions;
 using HITteamBot.Repository.Entities.Base;
 using Newtonsoft.Json;
@@ -13,6 +14,7 @@ namespace HITteamBot.Repository.Controllers
 {
     public class ActionsController
     {
+        #region Добавление новых действий
         public static async Task<string> AddNewAction(string query)
         {
             try
@@ -94,6 +96,9 @@ namespace HITteamBot.Repository.Controllers
             }
         }
 
+        #endregion
+
+        #region Получение действий
         public static async Task<List<InlineKeyboardButton[]>> GetActionsInButtons(ActionType type)
         {
             List<InlineKeyboardButton[]> actions = new List<InlineKeyboardButton[]>();
@@ -191,6 +196,10 @@ namespace HITteamBot.Repository.Controllers
             return info;
         }
 
+        #endregion
+
+        #region Старт действия
+
         public static async Task<ActionHistory> StartAction(string username, string path)
         {
             Entities.Actions.Action action = new Entities.Actions.Action();
@@ -255,9 +264,9 @@ namespace HITteamBot.Repository.Controllers
             return actionHistory;
         }
 
-        public static async Task<bool> IsInAction(string username)
+        public static async Task<ActionHistory> CurrentAction(string username)
         {
-            bool response = false;
+            ActionHistory action = new ActionHistory();
             List<ActionHistory> histories = new List<ActionHistory>();
             try
             {
@@ -269,7 +278,7 @@ namespace HITteamBot.Repository.Controllers
                     {
                         histories = (List<ActionHistory>)JsonConvert.DeserializeObject<IEnumerable<ActionHistory>>(System.IO.File.ReadAllText(historyPath));
                         if (System.IO.File.Exists(yesterdayHistoryPath)) histories.AddRange((List<ActionHistory>)JsonConvert.DeserializeObject<IEnumerable<ActionHistory>>(System.IO.File.ReadAllText(yesterdayHistoryPath)));
-                        response = histories.Any(s => s.Username == username && s.FinishDate >= DateTime.Now);
+                        action = histories.Where(s => s.Username == username && s.FinishDate >= DateTime.Now).FirstOrDefault();
                     });
                 }
             }
@@ -277,8 +286,12 @@ namespace HITteamBot.Repository.Controllers
             {
 
             }
-            return response;
+            return action;
         }
+
+        #endregion
+
+        #region Выдача наград
 
         public static async void GiveOutLast2DaysRewards()
         {
@@ -307,11 +320,9 @@ namespace HITteamBot.Repository.Controllers
                         histories = (List<ActionHistory>)JsonConvert.DeserializeObject<IEnumerable<ActionHistory>>(System.IO.File.ReadAllText(historyPath));
                         foreach (var history in histories.Where(s => s.IsRewarded == false && s.FinishDate <= DateTime.Now))
                         {
-                            Entities.Characters.Character character = Characters.CharactersController.GetCharacter(history.Username).Result;
-                            character.Characteristics.CurrentHealth -= history.Consequences.Damage;
-                            if (character.Characteristics.CurrentHealth <= 0) character.LifeState = Entities.Characters.LifeStates.Unconscious;
-                            character.Characteristics.Rads += history.Consequences.Rads;
-                            if (character.Characteristics.Rads >= 1000) character.LifeState = Entities.Characters.LifeStates.Dead;
+                            Entities.Characters.Character character = CharactersController.DamageCharacter(history.Username, history.Consequences.Damage, history.Consequences.Rads).Result;
+                            if (character.LifeState == Entities.Characters.LifeStates.Unconscious) break;
+
                             foreach (var rew in history.Rewards)
                             {
                                 switch (rew.Type)
@@ -331,7 +342,7 @@ namespace HITteamBot.Repository.Controllers
                                 }
                             }
                             history.IsRewarded = true;
-                            Characters.CharactersController.SaveCharacter(character);
+                            CharactersController.SaveCharacter(character);
                         }
                         System.IO.File.WriteAllText(historyPath, JsonConvert.SerializeObject(histories));
                     });
@@ -344,5 +355,47 @@ namespace HITteamBot.Repository.Controllers
             }
             return response;
         }
+
+        public static async Task<bool> DropCurrentAction(string username)
+        {
+            try
+            {
+                ActionHistory action = new ActionHistory();
+                List<ActionHistory> histories = new List<ActionHistory>();
+                List<ActionHistory> yesterdayHistories = new List<ActionHistory>();
+                string historyPath = Program.HistoryDirectory + $@"\Actions\{DateTime.Now.ToString("dd-MM-yyyy")}.json";
+                string yesterdayHistoryPath = Program.HistoryDirectory + $@"\Actions\{DateTime.Now.AddDays(-1).ToString("dd-MM-yyyy")}.json";
+                if (System.IO.File.Exists(historyPath))
+                {
+                    await Task.Factory.StartNew(() =>
+                    {
+                        histories = (List<ActionHistory>)JsonConvert.DeserializeObject<IEnumerable<ActionHistory>>(System.IO.File.ReadAllText(historyPath));
+                        if (System.IO.File.Exists(yesterdayHistoryPath)) yesterdayHistories = (List<ActionHistory>)JsonConvert.DeserializeObject<IEnumerable<ActionHistory>>(System.IO.File.ReadAllText(yesterdayHistoryPath));
+
+                        if (histories.Any(s => s.Username == username && s.FinishDate >= DateTime.Now))
+                        {
+                            histories.Where(s => s.Username == username && s.FinishDate >= DateTime.Now).FirstOrDefault().IsRewarded = true;
+                            System.IO.File.WriteAllText(historyPath, JsonConvert.SerializeObject(histories));
+                            EventsTimer timer = Program.Events.Where(u => u.Username == username && u.TimerName == histories.Where(s => s.Username == username && s.FinishDate >= DateTime.Now).FirstOrDefault().ActionName).FirstOrDefault();
+                            if (timer != null) Program.Events.Remove(timer);
+                        }
+                        else if (yesterdayHistories.Any(s => s.Username == username && s.FinishDate >= DateTime.Now))
+                        {
+                            yesterdayHistories.Where(s => s.Username == username && s.FinishDate >= DateTime.Now).FirstOrDefault().IsRewarded = true;
+                            System.IO.File.WriteAllText(yesterdayHistoryPath, JsonConvert.SerializeObject(yesterdayHistories));
+                            EventsTimer timer = Program.Events.Where(u => u.Username == username && u.TimerName == yesterdayHistories.Where(s => s.Username == username && s.FinishDate >= DateTime.Now).FirstOrDefault().ActionName).FirstOrDefault();
+                            if (timer != null) Program.Events.Remove(timer);
+                        }
+                    });
+                }
+            }
+            catch (Exception)
+            {
+
+            }
+            return true;
+        }
+
+        #endregion
     }
 }

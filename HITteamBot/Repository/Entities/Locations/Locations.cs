@@ -6,6 +6,7 @@ namespace HITteamBot.Repository.Entities.Locations
 {
     public enum LocationTypes
     {
+        Unknown,
         Settlement,
         City,
         Forest,

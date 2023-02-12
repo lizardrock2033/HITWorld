@@ -4,6 +4,7 @@ using System.Text;
 using HITteamBot.Repository.Entities.Characters;
 using HITteamBot.Repository.Entities.Actions;
 using HITteamBot.Repository.Entities.Base;
+using HITteamBot.Repository.Entities.Items.Chemicals;
 
 namespace HITteamBot.Repository.Controllers
 {
@@ -42,6 +43,21 @@ namespace HITteamBot.Repository.Controllers
                 { ActionRewardType.Caps, $"{Emoji.Caps}_Крышки" },
                 { ActionRewardType.Junk, $"_Хлам" },
                 { ActionRewardType.Item, $"_Предмет" }
+            };
+            return locales[type];
+        }
+
+        public static string GetChemical(ChemicalsInfo type)
+        {
+            Dictionary<ChemicalsInfo, string> locales = new Dictionary<ChemicalsInfo, string>()
+            {
+                { ChemicalsInfo.Stimpack, $"{Emoji.Stimpack} Стимуляторы" },
+                { ChemicalsInfo.Buffout, $"{Emoji.Muscle} Баффаут" },
+                { ChemicalsInfo.Mentats, $"{Emoji.Brain} Ментаты" },
+                { ChemicalsInfo.Psyho, $"{Emoji.Psycho} Психо" },
+                { ChemicalsInfo.MedX, $"{Emoji.DNA} МедХ" },
+                { ChemicalsInfo.RadAway, $"{Emoji.RadAway} Антирадин" },
+                { ChemicalsInfo.RadX, $"{Emoji.RadX} РадХ" }
             };
             return locales[type];
         }
