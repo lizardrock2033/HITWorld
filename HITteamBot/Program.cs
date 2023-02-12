@@ -21,6 +21,7 @@ using HITteamBot.Repository.Entities.Base;
 using HITteamBot.Repository.Controllers.Base;
 using HITteamBot.Repository.Entities.Actions;
 using HITteamBot.Repository.Entities.Characters;
+using System.Reflection;
 
 namespace HITteamBot
 {
@@ -410,6 +411,15 @@ namespace HITteamBot
                                 $"{Emoji.RadAway} Антирадин:   _{character.Inventory.Chemicals.RadAways.Count}_\r\n" +
                                 $"{Emoji.RadX} РадХ:   _{character.Inventory.Chemicals.RadXes.Count}_";
 
+                List<InlineKeyboardButton[]> availableToUse = new List<InlineKeyboardButton[]>();
+
+                foreach (FieldInfo field in character.Inventory.Chemicals.GetType().GetFields())
+                {
+                    var s = field.GetValue(character.Inventory.Chemicals);
+                }
+
+                availableToUse.Add(new[] { InlineKeyboardButton.WithCallbackData($"", $"") });
+
                 InlineKeyboardMarkup inlineKeyboard = new InlineKeyboardMarkup(new[] { InlineKeyboardButton.WithCallbackData("Назад", $"{(int)MainShedule.GameMenu}_{(int)GameMenu.Inventory}") });
 
                 await botClient.EditMessageTextAsync(
@@ -565,10 +575,10 @@ namespace HITteamBot
             try
             {
                 InlineKeyboardMarkup inlineKeyboard = new InlineKeyboardMarkup(new[]
-            {
-                InlineKeyboardButton.WithCallbackData("Отправиться", $"{(int)MainShedule.GameMenu}_{(int)GameMenu.StartAction}_{data[0]}_{string.Join('_', data[1..])}"),
-                InlineKeyboardButton.WithCallbackData("Назад", $"{(int)MainShedule.GameMenu}_{(int)GameMenu.ActionsList}")
-            });
+                {
+                    InlineKeyboardButton.WithCallbackData("Отправиться", $"{(int)MainShedule.GameMenu}_{(int)GameMenu.StartAction}_{data[0]}_{string.Join('_', data[1..])}"),
+                    InlineKeyboardButton.WithCallbackData("Назад", $"{(int)MainShedule.GameMenu}_{(int)GameMenu.ActionsList}")
+                });
                 await botClient.SendTextMessageAsync(
                             chatId: message.Chat.Id,
                             text: await ActionsController.GetActionInfo(query),
