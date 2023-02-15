@@ -209,7 +209,7 @@ namespace HITteamBot.Repository.Controllers.Characters
         #region Получение информации о персонаже
         public static async Task<string> GetCharacterFullInfo(string username)
         {
-            string info = "Персонаж не найден";
+            string info = "Хэй, я тебя раньше не видел.";
             try
             {
                 string userCharacterDirectory = BaseController.GetUserDirectory(username) + $"\\Character";
@@ -273,7 +273,7 @@ namespace HITteamBot.Repository.Controllers.Characters
             try
             {
                 Character character = await GetCharacter(username);
-
+                if (character == null || string.IsNullOrEmpty(character?.User)) throw new Exception("не найден");
                 if (character.LifeState == LifeStates.Unconscious)
                 {
                     info = $"{(!string.IsNullOrEmpty(character.Avatar) ? character.Avatar : Emoji.Incognito)} _{character.Name}_\r\n" +
@@ -286,7 +286,7 @@ namespace HITteamBot.Repository.Controllers.Characters
                 else
                 {
                     ActionHistory action = await ActionsController.CurrentAction(username);
-                    string where = action == null ? "В поселении" : $"{action.ActionName.Replace("_", " ")}, закончит в {action.FinishDate.ToString("HH:mm")}";
+                    string where = action == null || string.IsNullOrEmpty(action.Username) ? "В поселении" : $"{action.ActionName.Replace("_", " ")}, закончит в {action.FinishDate.ToString("HH:mm")}";
                     info = $"{(!string.IsNullOrEmpty(character.Avatar) ? character.Avatar : Emoji.Incognito)} _{character.Name}_\r\n" +
                                     $"{Emoji.Star} *Уровень:*   _{character.Level} ({character.Characteristics.Experience}/{character.Characteristics.NextLevelOn})_\r\n" +
                                     $"{Emoji.Heart} *HP:*   _{character.Characteristics.CurrentHealth}/{character.Characteristics.Health}_\r\n" +
@@ -324,11 +324,11 @@ namespace HITteamBot.Repository.Controllers.Characters
                                     character.Characteristics.CurrentHealth + character.Inventory.Chemicals.Stimpacks.Effect.Power;
 
                                 character.Inventory.Chemicals.Stimpacks.Count--;
-                                response = $"_{character.Name}_ использовал стимулятор!\r\n" +
+                                response = $"_{character.Name}_ использовал стимулятор.\r\n" +
                                             $"{Emoji.Heart} Здоровье:   _{character.Characteristics.CurrentHealth}/{character.Characteristics.Health}_\r\n" +
                                             $"Осталось стимуляторов:   _{character.Inventory.Chemicals.Stimpacks.Count}_";
                             }
-                            else throw new Exception($"У _{character.Name}_ закончились стимуляторы!");
+                            else throw new Exception($"_{character.Name}_, у тебя закончились стимуляторы.");
                             break;
                         case ChemicalsInfo.Buffout:
                             break;
@@ -389,6 +389,33 @@ namespace HITteamBot.Repository.Controllers.Characters
 
             }
             return character;
+        }
+
+        public static async Task<string> RadAwayBlessing()
+        {
+            string response = "";
+            try
+            {
+                await Task.Factory.StartNew(() =>
+                {
+                    foreach (var user in Directory.GetDirectories(Program.UsersDirectory))
+                    {
+                        DirectoryInfo dir = new DirectoryInfo(user);
+                        Character character = GetCharacter(dir.Name).Result;
+                        character.Characteristics.Rads = 0;
+                        character.Characteristics.RadContamination = RadContamination.Clear;
+                        SaveCharacter(character);
+                    }
+                });
+                response = $"Внимание, жители Сэнкчуари Хиллз!\r\n" +
+                    $"Как вы могли заметить, у воды сегодня странный вкус. Не волнуйтесь, Мэтт случайно опрокинул в водоочиститель ведро антирадина.\r\n" +
+                    $"Думаю, эта случайная оплошность даже поправила ваше здоровье, излечив от радиации.";
+            }
+            catch (Exception)
+            {
+
+            }
+            return response;
         }
         #endregion
 

@@ -214,7 +214,7 @@ namespace HITteamBot.Repository.Controllers
                     await Task.Factory.StartNew(() => {
                         Random random = new Random();
                         action = JsonConvert.DeserializeObject<Entities.Actions.Action>(System.IO.File.ReadAllText(path));
-                        Entities.Characters.Character character = Characters.CharactersController.GetCharacter(username).Result;
+                        Entities.Characters.Character character = CharactersController.GetCharacter(username).Result;
                         actionHistory = new ActionHistory()
                         {
                             Username = username,
@@ -226,8 +226,8 @@ namespace HITteamBot.Repository.Controllers
                             IsRewarded = false,
                             Consequences = new ActionConsequences()
                             {
-                                Rads = (short)(action.Consequences.Rads + character.Level * 3 - random.Next(character.Characteristics.Attributes.Luck * 10) - character.Characteristics.Attributes.Endurance * 3),
-                                Damage = action.Consequences.Damage + character.Level - character.Characteristics.Attributes.Endurance * 2 - random.Next(character.Characteristics.Attributes.Luck * 5)
+                                Rads = (short)(action.Consequences.Rads + character.Level * 3 - random.Next(character.Characteristics.Attributes.Luck * 3) - character.Characteristics.Attributes.Endurance),
+                                Damage = action.Consequences.Damage + character.Level - character.Characteristics.Attributes.Endurance - random.Next(character.Characteristics.Attributes.Luck * 3)
                             }
                         };
 
@@ -239,11 +239,13 @@ namespace HITteamBot.Repository.Controllers
                                     rew.Amount += (long)(rew.Amount * (character.Characteristics.Attributes.Intellegence * 0.03f));
                                     break;
                                 case ActionRewardType.Caps:
-                                    rew.Amount += (long)(rew.Amount * (character.Characteristics.Attributes.Perception * 0.01f) + random.Next(character.Characteristics.Attributes.Luck + 1) * character.Level);
+                                    rew.Amount += (long)(rew.Amount * (character.Characteristics.Attributes.Perception * 0.03f) + random.Next(character.Characteristics.Attributes.Luck) * character.Level);
                                     break;
                                 case ActionRewardType.Junk:
                                     break;
                                 case ActionRewardType.Item:
+                                    if (actionHistory.ActionName == "Вылазка_в_аптеку")
+                                        rew.Amount += (random.Next(character.Characteristics.Attributes.Luck * 10) <= character.Characteristics.Attributes.Luck ? 1 : 0) + (random.Next(101) <= character.Characteristics.Attributes.Perception * 10 ? 1 : 0);
                                     break;
                                 default:
                                     break;
@@ -336,6 +338,8 @@ namespace HITteamBot.Repository.Controllers
                                     case ActionRewardType.Junk:
                                         break;
                                     case ActionRewardType.Item:
+                                        if (history.ActionName == "Вылазка_в_аптеку")
+                                            character.Inventory.Chemicals.Stimpacks.Count += (int)rew.Amount;
                                         break;
                                     default:
                                         break;

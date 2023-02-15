@@ -1,0 +1,1 @@
+{"Name":"Вылазка_в_аптеку","Type":0,"DurationInMinutes":60,"Rewards":[{"Type":0,"Amount":20},{"Type":1,"Amount":10},{"Type":3,"Amount":1}],"Consequences":{"Rads":20,"Damage":10}}

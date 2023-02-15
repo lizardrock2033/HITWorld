@@ -59,6 +59,7 @@ namespace HITteamBot
                     receiverOptions,
                     cancellationToken
                 );
+
                 Console.ReadLine();
             }
             catch (Exception)
@@ -186,6 +187,7 @@ namespace HITteamBot
                                     ActionInfo(botClient, callbackMessage, string.Join(' ', callback[2..]), cancellationToken);
                                     return;
                                 case GameMenu.StartAction:
+                                    if (!Events.Any(x => x.Username == "System" && x.TimerName == "RadAwayBlessing")) StartRadAwayBlessingEvent(botClient, callbackMessage, cancellationToken);
                                     StartAction(botClient, update.CallbackQuery, update.CallbackQuery.Data.Replace("1_2_", ""), cancellationToken);
                                     return;
                                 case GameMenu.Inventory:
@@ -382,7 +384,7 @@ namespace HITteamBot
             try
             {
                 Character character = await CharactersController.GetCharacter(callbackQuery.From.Username);
-                if (string.IsNullOrEmpty(character.Name)) throw new Exception("Персонаж не найден");
+                if (string.IsNullOrEmpty(character.Name)) throw new Exception("Хэй, я тебя не знаю и никогда не видел в нашем поселении.");
                 string info = $"{Emoji.Pager} Инвентарь   _{character.Name}_\r\n\r\n" +
                                 $"{Emoji.WeightLifter} Загруженность:   _{character.Characteristics.CurrentWL} / {character.Characteristics.WeightLimit}_\r\n" +
                                 $"{Emoji.Caps} Крышки:   _{character.Inventory.Caps}_";
@@ -711,7 +713,8 @@ namespace HITteamBot
                 string path = await ActionsController.GetActionPath(query);
                 Repository.Entities.Actions.Action action = await ActionsController.GetAction(path);
                 Character character = await CharactersController.GetCharacter(callbackQuery.From.Username);
-                if (await ActionsController.CurrentAction(callbackQuery.From.Username) != null) throw new Exception($"_{character.Name}_ уже на задании!");
+                ActionHistory actionHistory = await ActionsController.CurrentAction(callbackQuery.From.Username);
+                if (!string.IsNullOrEmpty(actionHistory?.Username)) throw new Exception($"_{character.Name}_? Он еще не вернулся с прошлого задания.");
                 ActionHistory history = await ActionsController.StartAction(callbackQuery.From.Username, path);
                 TimerCallback timerCallback = new TimerCallback(Notify);
                 NotifyData notifyData = new NotifyData()
@@ -719,8 +722,7 @@ namespace HITteamBot
                     BotClient = botClient,
                     Chat = callbackQuery.Message.Chat,
                     Username = callbackQuery.From.Username,
-                    Message = $"[{character.Name}](tg://user?id={callbackQuery.From.Id}) вернулся с задания!\r\n\r\n" +
-                    $"Получено:\r\n",
+                    Message = $"[{character.Name}](tg://user?id={callbackQuery.From.Id}), с возвращением.\r\n\r\nНеплохой улов:\r\n",
                     NotifiedBy = NotifiedBy.Action,
                     CancellationToken = cancellationToken
                 };
@@ -737,7 +739,7 @@ namespace HITteamBot
                 {
                     Username = callbackQuery.From.Username,
                     TimerName = action.Name,
-                    Timer = BaseController.SetTimer(timerCallback, notifyData, action.DurationInMinutes)
+                    Timer = BaseController.SetSingleTimer(timerCallback, notifyData, action.DurationInMinutes)
                 };
 
                 notifyData.Timer = timer;
@@ -746,7 +748,7 @@ namespace HITteamBot
                 await botClient.DeleteMessageAsync(callbackQuery.Message.Chat.Id, callbackQuery.Message.MessageId);
                 await botClient.SendTextMessageAsync(
                             chatId: callbackQuery.Message.Chat.Id,
-                            text: $"_{character.Name}_ отправился на _{history.ActionName.Replace("_", " ")}_!",
+                            text: $"_{character.Name}_, отправляйся на _{history.ActionName.Replace("_", " ")}_. Если увидишь поселение, нуждающееся в помощи - обязательно помоги.",
                             parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
                             cancellationToken: cancellationToken);
             }
@@ -793,6 +795,55 @@ namespace HITteamBot
             }
         }
 
+        public static async void StartRadAwayBlessingEvent(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await Task.Factory.StartNew(() =>
+                {
+                    TimerCallback timerCallback = new TimerCallback(RadAwayBlessingEvent);
+                    NotifyData notifyData = new NotifyData()
+                    {
+                        BotClient = botClient,
+                        Chat = message.Chat,
+                        CancellationToken = cancellationToken
+                    };
+
+                    EventsTimer timer = new EventsTimer()
+                    {
+                        Username = "System",
+                        TimerName = "RadAwayBlessing",
+                        Timer = BaseController.SetTimer(timerCallback, notifyData, 10, 480)
+                    };
+
+                    notifyData.Timer = timer;
+                    Events.Add(timer);
+                });
+            }
+            catch (Exception)
+            {
+
+            }
+        }
+
+        public static async void RadAwayBlessingEvent(object obj)
+        {
+            try
+            {
+                NotifyData notifyData = (NotifyData)obj;
+                Random random = new Random();
+                if (random.Next(101) <= 30) await notifyData.BotClient.SendTextMessageAsync(
+                                                    chatId: notifyData.Chat.Id,
+                                                    text: await CharactersController.RadAwayBlessing(),
+                                                    parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
+                                                    cancellationToken: notifyData.CancellationToken);
+            }
+            catch (Exception)
+            {
+
+            }
+        }
+
         public static async void CharacterSettings(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
         {
             try
@@ -800,7 +851,7 @@ namespace HITteamBot
                 InlineKeyboardMarkup newAvatar = new InlineKeyboardMarkup(new[] {
                 new[]
                 {
-                    InlineKeyboardButton.WithCallbackData("Новый аватар", $"{(int)MainShedule.MainMenu}_{(int)MainMenu.Avatar}")
+                    InlineKeyboardButton.WithCallbackData("Сделать пластическую операцию", $"{(int)MainShedule.MainMenu}_{(int)MainMenu.Avatar}")
                 },
                 new[] { InlineKeyboardButton.WithCallbackData("Назад", $"{(int)MainShedule.MainMenu}_66") }});
 
@@ -848,7 +899,7 @@ namespace HITteamBot
 
         public static async Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
         {
-            Console.WriteLine(JsonConvert.SerializeObject(exception.Message));
+            Console.WriteLine(exception.Message, exception.InnerException, exception.Source, DateTime.Now.ToString("HH:mm:ss"));
             await Task.Delay(190000);
             Main(null);
         }

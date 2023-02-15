@@ -11,9 +11,14 @@ namespace HITteamBot.Repository.Controllers.Base
 {
     public class BaseController
     {
-        public static Timer SetTimer(TimerCallback timerCallback, object state, int dueTime)
+        public static Timer SetSingleTimer(TimerCallback timerCallback, object state, int dueTime)
         {
             return new Timer(timerCallback, state, dueTime * 60000, Timeout.Infinite);
+        }
+
+        public static Timer SetTimer(TimerCallback timerCallback, object state, int dueTime, int period)
+        {
+            return new Timer(timerCallback, state, dueTime * 60000, period * 60000);
         }
 
         public static bool RemoveTimer(EventsTimer timer)
