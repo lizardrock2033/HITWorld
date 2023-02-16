@@ -39,6 +39,7 @@ namespace HITteamBot
         public static readonly string ItemsDirectory = ObjectsDirectory + @"\Items";
         static ITelegramBotClient bot = new TelegramBotClient("5643667905:AAGeZiUGhEGUP9cAXEU7Llx9Bk6UvfuxCgc");
         public static List<EventsTimer> Events = new List<EventsTimer>();
+
         static void Main(string[] args)
         {
             try

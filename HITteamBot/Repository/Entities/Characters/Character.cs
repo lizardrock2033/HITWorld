@@ -5,6 +5,7 @@ using HITteamBot.Repository.Entities.Items.Equipment;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Microsoft.EntityFrameworkCore;
 
 namespace HITteamBot.Repository.Entities.Characters
 {

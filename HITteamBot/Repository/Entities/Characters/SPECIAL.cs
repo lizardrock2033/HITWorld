@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Text;
 
 namespace HITteamBot.Repository.Entities.Characters
 {
     public class SPECIAL
     {
+        [Key]
+        public long Id { get; set; }
         public short Strength { get; set; }
         public short Perception { get; set; }
         public short Endurance { get; set; }
