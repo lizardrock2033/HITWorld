@@ -43,7 +43,7 @@ namespace HITteamBot
         {
             try
             {
-                Console.WriteLine(bot.GetMeAsync().Result.FirstName + " запущен...");
+                Console.WriteLine(bot.GetMeAsync().Result.FirstName + " вернулся в Сэнкчуари...");
                 CreateDirectories();
                 ActionsController.GiveOutLast2DaysRewards();
 
@@ -75,7 +75,7 @@ namespace HITteamBot
             {
                 if (update.Type == Telegram.Bot.Types.Enums.UpdateType.Message && !string.IsNullOrEmpty(message.Text) && DateTime.Now.ToUniversalTime() - message.Date < TimeSpan.FromMinutes(3) && message.Text[0] == '/')
                 {
-                    switch (message.Text.ToLower().Replace("/", "").Replace($"@{botClient.GetMeAsync().Result.FirstName.ToLower()}", "").Split(new char[] { ' ' })[0])
+                    switch (message.Text.ToLower().Replace("/", "").Replace($"@{botClient.GetMeAsync().Result.Username.ToLower()}", "").Split(new char[] { ' ' })[0])
                     {
                         // Стартовая часть
                         case "start":
@@ -108,28 +108,28 @@ namespace HITteamBot
                         // Настройка и создание элементов (с правами доступа)
                         case "newperk":
                             if (BaseController.CheckPermissions(message.From.Username, PermissionsType.Moderator).Result)
-                                _ = botClient.SendTextMessageAsync(message.Chat.Id, await PerksController.AddNewPerk(message.Text.Replace("/newPerk", "").Replace($"@{botClient.GetMeAsync().Result.FirstName}", "")));
+                                _ = botClient.SendTextMessageAsync(message.Chat.Id, await PerksController.AddNewPerk(message.Text.Replace("/newPerk", "").Replace($"@{botClient.GetMeAsync().Result.Username}", "")));
                             return;
                         case "neweffect":
                             if (BaseController.CheckPermissions(message.From.Username, PermissionsType.Moderator).Result)
-                                _ = botClient.SendTextMessageAsync(message.Chat.Id, await PerksController.AddNewEffect(message.Text.Replace("/newEffect", "").Replace($"@{botClient.GetMeAsync().Result.FirstName}", "")));
+                                _ = botClient.SendTextMessageAsync(message.Chat.Id, await PerksController.AddNewEffect(message.Text.Replace("/newEffect", "").Replace($"@{botClient.GetMeAsync().Result.Username}", "")));
                             return;
                         case "addperk":
                             if (BaseController.CheckPermissions(message.From.Username, PermissionsType.Moderator).Result)
-                                _ = botClient.SendTextMessageAsync(message.Chat.Id, await PerksController.AddPerkToCharacter(message.Text.Replace("/addPerk", "").Replace($"@{botClient.GetMeAsync().Result.FirstName}", "")));
+                                _ = botClient.SendTextMessageAsync(message.Chat.Id, await PerksController.AddPerkToCharacter(message.Text.Replace("/addPerk", "").Replace($"@{botClient.GetMeAsync().Result.Username}", "")));
                             return;
 
                         case "newaction":
                             if (BaseController.CheckPermissions(message.From.Username, PermissionsType.Moderator).Result)
-                                _ = botClient.SendTextMessageAsync(message.Chat.Id, await ActionsController.AddNewAction(message.Text.Replace("/newAction", "").Replace($"@{botClient.GetMeAsync().Result.FirstName}", "")));
+                                _ = botClient.SendTextMessageAsync(message.Chat.Id, await ActionsController.AddNewAction(message.Text.Replace("/newAction", "").Replace($"@{botClient.GetMeAsync().Result.Username}", "")));
                             return;
                         case "addactionreward":
                             if (BaseController.CheckPermissions(message.From.Username, PermissionsType.Moderator).Result)
-                                _ = botClient.SendTextMessageAsync(message.Chat.Id, await ActionsController.AddRewardToAction(message.Text.Replace("/addActionReward", "").Replace($"@{botClient.GetMeAsync().Result.FirstName}", "")));
+                                _ = botClient.SendTextMessageAsync(message.Chat.Id, await ActionsController.AddRewardToAction(message.Text.Replace("/addActionReward", "").Replace($"@{botClient.GetMeAsync().Result.Username}", "")));
                             return;
                         case "addactionconseq":
                             if (BaseController.CheckPermissions(message.From.Username, PermissionsType.Moderator).Result)
-                                _ = botClient.SendTextMessageAsync(message.Chat.Id, await ActionsController.AddConsequencesToAction(message.Text.Replace("/addActionConseq", "").Replace($"@{botClient.GetMeAsync().Result.FirstName}", "")));
+                                _ = botClient.SendTextMessageAsync(message.Chat.Id, await ActionsController.AddConsequencesToAction(message.Text.Replace("/addActionConseq", "").Replace($"@{botClient.GetMeAsync().Result.Username}", "")));
                             return;
                         default:
                             break;
@@ -236,6 +236,10 @@ namespace HITteamBot
                                     }
                                     else GetCharacterInventory(botClient, update.CallbackQuery, cancellationToken);
                                     return;
+                                case GameMenu.Characteristics:
+                                    InlineKeyboardMarkup inlineKeyboard = new InlineKeyboardMarkup(new[] { InlineKeyboardButton.WithCallbackData("Назад", $"{(int)MainShedule.MainMenu}_{(int)MainMenu.Character}") });
+                                    await botClient.EditMessageTextAsync(update.CallbackQuery.Message.Chat.Id, update.CallbackQuery.Message.MessageId, await CharactersController.GetCharacterAttributesInfo(update.CallbackQuery.From.Username), Telegram.Bot.Types.Enums.ParseMode.Markdown, null, null, inlineKeyboard, cancellationToken);
+                                    return;
                                 case GameMenu.CharacterSettings:
                                     CharacterSettings(botClient, callbackMessage, cancellationToken);
                                     return;
@@ -328,7 +332,7 @@ namespace HITteamBot
 
                 await botClient.SendTextMessageAsync(
                             chatId: chatId,
-                            text: "Добро пожаловать в HIT_World!",
+                            text: "Добро пожаловать в Сэнкчуари Хиллз!",
                             replyMarkup: (await BaseController.CheckPermissions(username, PermissionsType.Moderator) || await BaseController.CheckPermissions(username, PermissionsType.Administrator)) ? inlineKeyboardWithPerms : inlineKeyboard,
                             cancellationToken: cancellationToken);
             }
@@ -346,7 +350,7 @@ namespace HITteamBot
                     new[]
                     {
                         InlineKeyboardButton.WithCallbackData("Инвентарь", $"{(int)MainShedule.GameMenu}_{(int)GameMenu.Inventory}"),
-                        InlineKeyboardButton.WithCallbackData("Характеристики", "woop")
+                        InlineKeyboardButton.WithCallbackData("Характеристики", $"{(int)MainShedule.GameMenu}_{(int)GameMenu.Characteristics}")
                     },
                     new[]
                     {
@@ -356,7 +360,7 @@ namespace HITteamBot
                     new[] { InlineKeyboardButton.WithCallbackData("Настройки персонажа", $"{(int)MainShedule.GameMenu}_{(int)GameMenu.CharacterSettings}") }
                 });
 
-                if (message.Text.ToLower().Replace("/", "").Replace($"@{botClient.GetMeAsync().Result.FirstName.ToLower()}", "") == "character") await botClient.SendTextMessageAsync(
+                if (message.Text.ToLower().Replace("/", "").Replace($"@{botClient.GetMeAsync().Result.Username.ToLower()}", "") == "character") await botClient.SendTextMessageAsync(
                             chatId: message.Chat.Id,
                             text: charInfo,
                             parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
@@ -789,9 +793,9 @@ namespace HITteamBot
                                 parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
                                 cancellationToken: notifyData.CancellationToken);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
+                string s = ex.Message;
             }
         }
 
@@ -899,7 +903,7 @@ namespace HITteamBot
 
         public static async Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
         {
-            Console.WriteLine(exception.Message, exception.InnerException, exception.Source, DateTime.Now.ToString("HH:mm:ss"));
+            Console.WriteLine($"{DateTime.Now.ToString("HH:mm:ss")}\t{exception.Message}");
             await Task.Delay(190000);
             Main(null);
         }
@@ -928,6 +932,7 @@ namespace HITteamBot
         ActionInfo,
         StartAction,
         Inventory,
+        Characteristics,
         CharacterSettings
     }
 

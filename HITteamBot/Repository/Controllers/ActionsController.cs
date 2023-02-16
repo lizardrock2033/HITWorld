@@ -184,8 +184,7 @@ namespace HITteamBot.Repository.Controllers
 
                     foreach (var reward in action.Rewards)
                     {
-                        string[] signAndType = Dictionaries.GetActionReward(reward.Type).Split(new char[] { '_' });
-                        info += $"   *{signAndType[1]}:*   _{reward.Amount}_ {signAndType[0]}\r\n";
+                        info += $"{Dictionaries.GetActionReward(reward.Type)}:   _{reward.Amount}_\r\n";
                     }
                 }
             }

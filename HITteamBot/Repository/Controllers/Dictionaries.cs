@@ -39,10 +39,10 @@ namespace HITteamBot.Repository.Controllers
         {
             Dictionary<ActionRewardType, string> locales = new Dictionary<ActionRewardType, string>()
             {
-                { ActionRewardType.Experience, $"{Emoji.Books}_Опыт" },
-                { ActionRewardType.Caps, $"{Emoji.Caps}_Крышки" },
-                { ActionRewardType.Junk, $"_Хлам" },
-                { ActionRewardType.Item, $"_Предмет" }
+                { ActionRewardType.Experience, $"{Emoji.Books} Опыт" },
+                { ActionRewardType.Caps, $"{Emoji.Caps} Крышки" },
+                { ActionRewardType.Junk, $"{Emoji.Junk} Хлам" },
+                { ActionRewardType.Item, $"{Emoji.Bag} Предмет" }
             };
             return locales[type];
         }
