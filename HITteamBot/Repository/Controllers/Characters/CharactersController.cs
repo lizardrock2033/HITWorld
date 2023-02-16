@@ -18,6 +18,7 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
 using System.Threading.Tasks;
 using HITteamBot.Repository.Entities.Actions;
+using HITteamBot.Repository.EntitesDB;
 
 namespace HITteamBot.Repository.Controllers.Characters
 {
@@ -259,6 +260,12 @@ namespace HITteamBot.Repository.Controllers.Characters
                                 $"{Emoji.Brain} *Интеллект:*   _{character.Characteristics.Attributes.Intellegence}_\r\n" +
                                 $"{Emoji.Leg} *Ловкость:*   _{character.Characteristics.Attributes.Agility}_\r\n" +
                                 $"{Emoji.Clover} *Удача:*   _{character.Characteristics.Attributes.Luck}_\r\n";
+
+                using (DatabaseContext dbContext = new DatabaseContext())
+                {
+                    dbContext.SPECIAL.Add(character.Characteristics.Attributes);
+                    dbContext.SaveChanges();
+                }
             }
             catch (Exception ex)
             {
