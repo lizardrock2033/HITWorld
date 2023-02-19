@@ -14,12 +14,16 @@ namespace HITteamBot.Repository.Entities.Characters
         public long Id { get; set; }
         public string Name { get; set; }
         public string Avatar { get; set; }
+        public int Experience { get; set; }
         public short Level { get; set; }
         public long SPECIALsId { get; set; }
-        public long CharacterPerksId { get; set; }
-        public long CharacteristicsId { get; set; }
-        public short LifeStateId { get; set; }
+        public int Health { get; set; }
+        public int CurrentHealth { get; set; }
+        public int ActionPoints { get; set; }
+        public int CurrentAP { get; set; }
+        public short Rads { get; set; }
         public long EquipmentId { get; set; }
-        public bool IsActive { get; set; }
+        public long Caps { get; set; }
+        public bool IsAlive { get; set; }
     }
 }

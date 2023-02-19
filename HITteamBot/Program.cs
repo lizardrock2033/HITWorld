@@ -58,7 +58,7 @@ namespace HITteamBot
 
             }
         }
-        
+
         public static async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
         {
             var message = update.Message;
@@ -187,7 +187,8 @@ namespace HITteamBot
                                         switch ((CharacterInventory)Enum.Parse(typeof(CharacterInventory), callback[2]))
                                         {
                                             case CharacterInventory.Chemicals:
-                                                if (callback.Length >= 4) {
+                                                if (callback.Length >= 4)
+                                                {
                                                     if (callback.Length >= 5)
                                                     {
                                                         switch ((InventoryUsage)Enum.Parse(typeof(InventoryUsage), callback[4]))
