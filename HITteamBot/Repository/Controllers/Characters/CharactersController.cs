@@ -18,7 +18,7 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
 using System.Threading.Tasks;
 using HITteamBot.Repository.Entities.Actions;
-using HITteamBot.Repository.EntitesDB;
+using HITteamBot.Repository.Domain;
 
 namespace HITteamBot.Repository.Controllers.Characters
 {
