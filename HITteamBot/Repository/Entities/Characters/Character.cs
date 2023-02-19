@@ -1,11 +1,8 @@
-﻿using HITteamBot.Repository.Entities.Characters;
-using HITteamBot.Repository.Entities.Locations;
-using HITteamBot.Repository.Entities.Perks;
-using HITteamBot.Repository.Entities.Items.Equipment;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 
 namespace HITteamBot.Repository.Entities.Characters
 {
@@ -22,7 +19,6 @@ namespace HITteamBot.Repository.Entities.Characters
         public int ActionPoints { get; set; }
         public int CurrentAP { get; set; }
         public short Rads { get; set; }
-        public long EquipmentId { get; set; }
         public long Caps { get; set; }
         public bool IsAlive { get; set; }
     }

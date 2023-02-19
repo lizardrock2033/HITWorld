@@ -3,71 +3,22 @@ using HITteamBot.Repository.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace HITteamBot.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20230219162637_jopa")]
+    partial class jopa
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "3.1.32")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128)
                 .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
-
-            modelBuilder.Entity("HITteamBot.Repository.Entities.Characters.Character", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
-
-                    b.Property<int>("ActionPoints")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Avatar")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<long>("Caps")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("CurrentAP")
-                        .HasColumnType("int");
-
-                    b.Property<int>("CurrentHealth")
-                        .HasColumnType("int");
-
-                    b.Property<long>("EquipmentId")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("Experience")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Health")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsAlive")
-                        .HasColumnType("bit");
-
-                    b.Property<short>("Level")
-                        .HasColumnType("smallint");
-
-                    b.Property<string>("Name")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<short>("Rads")
-                        .HasColumnType("smallint");
-
-                    b.Property<long>("SPECIALsId")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Character");
-                });
 
             modelBuilder.Entity("HITteamBot.Repository.Entities.Characters.SPECIAL", b =>
                 {
