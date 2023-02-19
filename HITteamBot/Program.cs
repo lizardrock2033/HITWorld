@@ -28,15 +28,6 @@ namespace HITteamBot
 {
     class Program
     {
-        public static readonly string BaseDirectory = AppContext.BaseDirectory;
-        public static readonly string DataDirectory = BaseDirectory + "Data";
-        public static readonly string AssetsDirectory = DataDirectory + @"\Assets";
-        public static readonly string HistoryDirectory = DataDirectory + @"\History";
-        public static readonly string ObjectsDirectory = DataDirectory + @"\Objects";
-        public static readonly string UsersDirectory = ObjectsDirectory + @"\Users";
-        public static readonly string PerksDirectory = ObjectsDirectory + @"\Perks";
-        public static readonly string ActionsDirectory = ObjectsDirectory + @"\Actions";
-        public static readonly string ItemsDirectory = ObjectsDirectory + @"\Items";
         static ITelegramBotClient bot = new TelegramBotClient("5643667905:AAGeZiUGhEGUP9cAXEU7Llx9Bk6UvfuxCgc");
         public static List<EventsTimer> Events = new List<EventsTimer>();
 
@@ -45,7 +36,6 @@ namespace HITteamBot
             try
             {
                 Console.WriteLine(bot.GetMeAsync().Result.FirstName + " вернулся в Сэнкчуари...");
-                CreateDirectories();
                 ActionsController.GiveOutLast2DaysRewards();
 
                 var cts = new CancellationTokenSource();
@@ -277,36 +267,6 @@ namespace HITteamBot
                         default:
                             return;
                     }
-                }
-            }
-            catch (Exception)
-            {
-
-            }
-        }
-
-        public static async void CreateDirectories()
-        {
-            try
-            {
-                Task task = Task.Factory.StartNew(() =>
-                {
-                    if (!Directory.Exists(DataDirectory)) Directory.CreateDirectory(DataDirectory);
-                    if (!Directory.Exists(AssetsDirectory)) Directory.CreateDirectory(AssetsDirectory);
-                    if (!Directory.Exists(HistoryDirectory)) Directory.CreateDirectory(HistoryDirectory);
-                    if (!Directory.Exists(ObjectsDirectory)) Directory.CreateDirectory(ObjectsDirectory);
-                    if (!Directory.Exists(UsersDirectory)) Directory.CreateDirectory(UsersDirectory);
-                    if (!Directory.Exists(PerksDirectory)) Directory.CreateDirectory(PerksDirectory);
-                    if (!Directory.Exists(ActionsDirectory)) Directory.CreateDirectory(ActionsDirectory);
-                    if (!Directory.Exists(ItemsDirectory)) Directory.CreateDirectory(ItemsDirectory);
-                });
-                await task;
-
-                if (!System.IO.File.Exists(ObjectsDirectory + $@"\Permissions.json"))
-                {
-                    await BaseController.SetPermissions("Lizardrock Player");
-                    await BaseController.SetPermissions("Lizardrock Moderator");
-                    await BaseController.SetPermissions("Lizardrock Administrator");
                 }
             }
             catch (Exception)

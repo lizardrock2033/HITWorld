@@ -11,20 +11,15 @@ namespace HITteamBot.Repository.Entities.Characters
 {
     public class Character
     {
-        public string User { get; set; }
+        public long Id { get; set; }
         public string Name { get; set; }
-        public byte Age { get; set; }
-        public string Gender { get; set; }
         public string Avatar { get; set; }
         public short Level { get; set; }
-        public Characteristics Characteristics { get; set; }
-        public List<Perk> Perks { get; set; }
-        public Equipment Equipment { get; set; }
-        public Inventory Inventory { get; set; }
-        public LifeStates LifeState { get; set; }
-        public Activities Activity { get; set; }
-        public LocationTypes CurrentLocationType { get; set; }
-        public List<CharacterStates> States { get; set; }
+        public long SPECIALsId { get; set; }
+        public long CharacterPerksId { get; set; }
+        public long CharacteristicsId { get; set; }
+        public short LifeStateId { get; set; }
+        public long EquipmentId { get; set; }
         public bool IsActive { get; set; }
     }
 }

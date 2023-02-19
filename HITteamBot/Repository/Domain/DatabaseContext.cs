@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace HITteamBot.Repository.EntitesDB
+namespace HITteamBot.Repository.Domain
 {
     public class DatabaseContext : DbContext
     {
