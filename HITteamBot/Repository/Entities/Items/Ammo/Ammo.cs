@@ -6,9 +6,8 @@ namespace HITteamBot.Repository.Entities.Items.Ammo
 {
     public class Ammo
     {
-        public List<Bullets> Bullets { get; set; }
-        public List<Battaries> Battaries { get; set; }
-        public List<Rockets> Rockets { get; set; }
-        public List<Grenades> Grenades { get; set; }
+        public short Id { get; set; }
+        public short TypeId { get; set; }
+        public string Name { get; set; }
     }
 }
