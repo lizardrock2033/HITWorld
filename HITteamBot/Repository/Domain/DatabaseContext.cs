@@ -22,6 +22,7 @@ namespace HITteamBot.Repository.Domain
         public DbSet<Expline> Explne { get; set; }
         public DbSet<Chemicals> Chemicals { get; set; }
         public DbSet<Ammo> Ammo { get; set; }
+        public DbSet<AmmoTypes> AmmoTypes { get; set; }
         public DbSet<Junk> Junk { get; set; }
         public DbSet<ItemTypes> ItemTypes { get; set; }
         public DbSet<InventoryItems> InventoryItems { get; set; }
