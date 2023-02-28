@@ -28,28 +28,27 @@ namespace HITteamBot
 {
     class Program
     {
-        //static ITelegramBotClient bot = new TelegramBotClient("5643667905:AAGeZiUGhEGUP9cAXEU7Llx9Bk6UvfuxCgc");
-        //public static List<EventsTimer> Events = new List<EventsTimer>();
+        static ITelegramBotClient bot = new TelegramBotClient("5643667905:AAGeZiUGhEGUP9cAXEU7Llx9Bk6UvfuxCgc");
+        public static List<EventsTimer> Events = new List<EventsTimer>();
 
         static void Main(string[] args)
         {
             try
             {
-                //Console.WriteLine(bot.GetMeAsync().Result.FirstName + " вернулся в Сэнкчуари...");
-                //ActionsController.GiveOutLast2DaysRewards();
+                Console.WriteLine(bot.GetMeAsync().Result.FirstName + " вернулся в Сэнкчуари...");
 
-                //var cts = new CancellationTokenSource();
-                //var cancellationToken = cts.Token;
-                //var receiverOptions = new ReceiverOptions
-                //{
-                //    AllowedUpdates = { }, // receive all update types
-                //};
-                //bot.StartReceiving(
-                //    HandleUpdateAsync,
-                //    HandleErrorAsync,
-                //    receiverOptions,
-                //    cancellationToken
-                //);
+                var cts = new CancellationTokenSource();
+                var cancellationToken = cts.Token;
+                var receiverOptions = new ReceiverOptions
+                {
+                    AllowedUpdates = { }, // receive all update types
+                };
+                bot.StartReceiving(
+                    HandleUpdateAsync,
+                    HandleErrorAsync,
+                    receiverOptions,
+                    cancellationToken
+                );
 
                 Console.ReadLine();
             }
@@ -59,222 +58,177 @@ namespace HITteamBot
             }
         }
 
-        //public static async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
-        //{
-        //    var message = update.Message;
-        //    try
-        //    {
-        //        if (update.Type == Telegram.Bot.Types.Enums.UpdateType.Message && !string.IsNullOrEmpty(message.Text) && DateTime.Now.ToUniversalTime() - message.Date < TimeSpan.FromMinutes(3) && message.Text[0] == '/')
-        //        {
-        //            switch (message.Text.ToLower().Replace("/", "").Replace($"@{botClient.GetMeAsync().Result.Username.ToLower()}", "").Split(new char[] { ' ' })[0])
-        //            {
-        //                // Стартовая часть
-        //                case "start":
-        //                    Menu(botClient, message.Chat.Id, message.From.Username, cancellationToken);
-        //                    return;
-        //                case "menu":
-        //                    Menu(botClient, message.Chat.Id, message.From.Username, cancellationToken);
-        //                    return;
-        //                case "character":
-        //                    string charInfo = await CharactersController.GetCharacterStateInfo(message.From.Username);
-        //                    if (charInfo.Contains("не найден"))
-        //                    {
-        //                        InlineKeyboardMarkup newCharacter = new InlineKeyboardMarkup(new[] { InlineKeyboardButton.WithCallbackData("Создать персонажа", $"{(int)MainShedule.MainMenu}_{(int)MainMenu.NewCharacter}") });
-        //                        _ = botClient.SendTextMessageAsync(chatId: message.Chat.Id, text: charInfo, Telegram.Bot.Types.Enums.ParseMode.Markdown, replyMarkup: newCharacter, cancellationToken: cancellationToken);
-        //                    }
-        //                    else Play(botClient, message, charInfo, cancellationToken);
-        //                    return;
+        public static async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
+        {
+            var message = update.Message;
+            try
+            {
+                if (update.Type == Telegram.Bot.Types.Enums.UpdateType.Message && !string.IsNullOrEmpty(message.Text) && DateTime.Now.ToUniversalTime() - message.Date < TimeSpan.FromMinutes(3) && message.Text[0] == '/')
+                {
+                    if (message.Text.Contains("/createChar"))
+                    {
+                        CreateNewCharacter(botClient, message, cancellationToken);
+                    }
+                }
 
-        //                // Создание персонажа
-        //                case "создать":
-        //                    _ = botClient.SendTextMessageAsync(message.Chat.Id, await CharactersController.CreateNewCharacter(message.From.Username + message.Text.Replace("/создать", "").Replace($"@{botClient.GetMeAsync().Result.FirstName}", "")), Telegram.Bot.Types.Enums.ParseMode.Markdown);
-        //                    return;
-        //                case "атрибуты":
-        //                    _ = botClient.SendTextMessageAsync(chatId: message.Chat.Id, text: await CharactersController.SetCharacterAttributes(message.From.Username + message.Text.Replace("/атрибуты", "").Replace($"@{botClient.GetMeAsync().Result.FirstName}", "")), Telegram.Bot.Types.Enums.ParseMode.Markdown, cancellationToken: cancellationToken);
-        //                    return;
-        //                case "аватар":
-        //                    _ = botClient.SendTextMessageAsync(message.Chat.Id, await CharactersController.SetCharacterAvatar(message.From.Username + message.Text.Replace("/аватар", "").Replace($"@{botClient.GetMeAsync().Result.FirstName}", "")));
-        //                    return;
+                if (update.Type == Telegram.Bot.Types.Enums.UpdateType.CallbackQuery)
+                {
+                    Message callbackMessage = update.CallbackQuery.Message;
+                    string[] callback = update.CallbackQuery.Data.Split(new char[] { '_' });
 
-        //                // Настройка и создание элементов (с правами доступа)
-        //                case "newperk":
-        //                    if (BaseController.CheckPermissions(message.From.Username, PermissionsType.Moderator).Result)
-        //                        _ = botClient.SendTextMessageAsync(message.Chat.Id, await PerksController.AddNewPerk(message.Text.Replace("/newPerk", "").Replace($"@{botClient.GetMeAsync().Result.Username}", "")));
-        //                    return;
-        //                case "neweffect":
-        //                    if (BaseController.CheckPermissions(message.From.Username, PermissionsType.Moderator).Result)
-        //                        _ = botClient.SendTextMessageAsync(message.Chat.Id, await PerksController.AddNewEffect(message.Text.Replace("/newEffect", "").Replace($"@{botClient.GetMeAsync().Result.Username}", "")));
-        //                    return;
-        //                case "addperk":
-        //                    if (BaseController.CheckPermissions(message.From.Username, PermissionsType.Moderator).Result)
-        //                        _ = botClient.SendTextMessageAsync(message.Chat.Id, await PerksController.AddPerkToCharacter(message.Text.Replace("/addPerk", "").Replace($"@{botClient.GetMeAsync().Result.Username}", "")));
-        //                    return;
+                    switch ((MainShedule)Enum.Parse(typeof(MainShedule), callback[0]))
+                    {
+                        // Создание и вызов персонажа
+                        case MainShedule.MainMenu:
+                            switch ((MainMenu)Enum.Parse(typeof(MainMenu), callback[1]))
+                            {
+                                case MainMenu.NewCharacter:
+                                    
+                                    return;
+                                case MainMenu.Character:
+                                    
+                                    return;
+                                case MainMenu.Avatar:
+                                    
+                                    return;
+                                default:
+                                    
+                                    return;
+                            }
 
-        //                case "newaction":
-        //                    if (BaseController.CheckPermissions(message.From.Username, PermissionsType.Moderator).Result)
-        //                        _ = botClient.SendTextMessageAsync(message.Chat.Id, await ActionsController.AddNewAction(message.Text.Replace("/newAction", "").Replace($"@{botClient.GetMeAsync().Result.Username}", "")));
-        //                    return;
-        //                case "addactionreward":
-        //                    if (BaseController.CheckPermissions(message.From.Username, PermissionsType.Moderator).Result)
-        //                        _ = botClient.SendTextMessageAsync(message.Chat.Id, await ActionsController.AddRewardToAction(message.Text.Replace("/addActionReward", "").Replace($"@{botClient.GetMeAsync().Result.Username}", "")));
-        //                    return;
-        //                case "addactionconseq":
-        //                    if (BaseController.CheckPermissions(message.From.Username, PermissionsType.Moderator).Result)
-        //                        _ = botClient.SendTextMessageAsync(message.Chat.Id, await ActionsController.AddConsequencesToAction(message.Text.Replace("/addActionConseq", "").Replace($"@{botClient.GetMeAsync().Result.Username}", "")));
-        //                    return;
-        //                default:
-        //                    break;
-        //            }
-        //        }
+                        // Геймплей
+                        case MainShedule.GameMenu:
+                            switch ((GameMenu)Enum.Parse(typeof(GameMenu), callback[1]))
+                            {
+                                case GameMenu.ActionsList:
+                                    
+                                    return;
+                                case GameMenu.ActionInfo:
+                                    
+                                    return;
+                                case GameMenu.StartAction:
+                                    
+                                    return;
+                                case GameMenu.Inventory:
+                                    if (callback.Length >= 3)
+                                    {
+                                        switch ((CharacterInventory)Enum.Parse(typeof(CharacterInventory), callback[2]))
+                                        {
+                                            case CharacterInventory.Chemicals:
+                                                if (callback.Length >= 4)
+                                                {
+                                                    if (callback.Length >= 5)
+                                                    {
+                                                        switch ((InventoryUsage)Enum.Parse(typeof(InventoryUsage), callback[4]))
+                                                        {
+                                                            case InventoryUsage.Use:
+                                                                
+                                                                break;
+                                                            case InventoryUsage.Give:
+                                                                break;
+                                                            case InventoryUsage.Sell:
+                                                                break;
+                                                            case InventoryUsage.Drop:
+                                                                break;
+                                                            default:
+                                                                break;
+                                                        }
+                                                    }
+                                                }
+                                                break;
+                                            case CharacterInventory.Junk:
+                                                
+                                                break;
+                                            case CharacterInventory.Ammo:
+                                                break;
+                                            case CharacterInventory.Weapons:
+                                                break;
+                                            case CharacterInventory.Armor:
+                                                break;
+                                            case CharacterInventory.Clothes:
+                                                break;
+                                            default:
+                                                
+                                                break;
+                                        }
+                                    }
+                                    return;
+                                case GameMenu.Characteristics:
+                                    InlineKeyboardMarkup inlineKeyboard = new InlineKeyboardMarkup(new[] { InlineKeyboardButton.WithCallbackData("Назад", $"{(int)MainShedule.MainMenu}_{(int)MainMenu.Character}") });
+                                    return;
+                                case GameMenu.CharacterSettings:
+                                    return;
+                                default:
+                                    await botClient.DeleteMessageAsync(callbackMessage.Chat.Id, callbackMessage.MessageId);
+                                    Message msg = callbackMessage;
+                                    msg.MessageId--;
+                                    return;
+                            }
 
-        //        if (update.Type == Telegram.Bot.Types.Enums.UpdateType.CallbackQuery)
-        //        {
-        //            Message callbackMessage = update.CallbackQuery.Message;
-        //            string[] callback = update.CallbackQuery.Data.Split(new char[] { '_' });
+                        // Системные настройки и заведение новых данных (с правами доступа)
+                        case MainShedule.SettingsMenu:
+                            switch ((SettingsMenu)Enum.Parse(typeof(SettingsMenu), callback[1]))
+                            {
+                                case SettingsMenu.Settings:
+                                    return;
+                                case SettingsMenu.NewPerk:
+                                    return;
+                                case SettingsMenu.NewEffect:
+                                    return;
+                                case SettingsMenu.NewAction:
+                                    return;
+                            }
+                            return;
 
-        //            switch ((MainShedule)Enum.Parse(typeof(MainShedule), callback[0]))
-        //            {
-        //                // Создание и вызов персонажа
-        //                case MainShedule.MainMenu:
-        //                    switch ((MainMenu)Enum.Parse(typeof(MainMenu), callback[1]))
-        //                    {
-        //                        case MainMenu.NewCharacter:
-        //                            await botClient.SendTextMessageAsync(callbackMessage.Chat.Id, "Придумайте персонажу имя, возраст и пол и начните сообщение с /создать.\r\n\r\n" +
-        //                                                                            "Пример:\r\n/создать Глория 34 женский");
-        //                            return;
-        //                        case MainMenu.Character:
-        //                            string charInfo = await CharactersController.GetCharacterStateInfo(update.CallbackQuery.From.Username);
-        //                            if (charInfo.Contains("не найден"))
-        //                            {
-        //                                InlineKeyboardMarkup newCharacter = new InlineKeyboardMarkup(new[] { InlineKeyboardButton.WithCallbackData("Создать персонажа", $"{(int)MainShedule.MainMenu}_{(int)MainMenu.NewCharacter}") });
-        //                                _ = botClient.SendTextMessageAsync(chatId: callbackMessage.Chat.Id, text: charInfo, Telegram.Bot.Types.Enums.ParseMode.Markdown, replyMarkup: newCharacter, cancellationToken: cancellationToken);
-        //                            }
-        //                            else Play(botClient, callbackMessage, charInfo, cancellationToken);
-        //                            return;
-        //                        case MainMenu.Avatar:
-        //                            _ = botClient.SendTextMessageAsync(callbackMessage.Chat.Id, "Вы можете выбрать любой эмодзи в качестве аватара вашего персонажа. " +
-        //                                                                        "Для этого начните сообщение с /аватар и пришлите любой понравившийся эмодзи.\r\n\r\n" +
-        //                                                                        "Пример:\r\n/аватар 🧔🏻‍♀️");
-        //                            return;
-        //                        default:
-        //                            string backToInfo = await CharactersController.GetCharacterStateInfo(update.CallbackQuery.From.Username);
-        //                            if (backToInfo.Contains("не найден"))
-        //                            {
-        //                                InlineKeyboardMarkup newCharacter = new InlineKeyboardMarkup(new[] { InlineKeyboardButton.WithCallbackData("Создать персонажа", $"{(int)MainShedule.MainMenu}_{(int)MainMenu.NewCharacter}") });
-        //                                _ = botClient.SendTextMessageAsync(chatId: callbackMessage.Chat.Id, text: backToInfo, Telegram.Bot.Types.Enums.ParseMode.Markdown, replyMarkup: newCharacter, cancellationToken: cancellationToken);
-        //                            }
-        //                            else Play(botClient, callbackMessage, backToInfo, cancellationToken);
-        //                            return;
-        //                    }
+                        default:
+                            return;
+                    }
+                }
+            }
+            catch (Exception)
+            {
 
-        //                // Геймплей
-        //                case MainShedule.GameMenu:
-        //                    switch ((GameMenu)Enum.Parse(typeof(GameMenu), callback[1]))
-        //                    {
-        //                        case GameMenu.ActionsList:
-        //                            ActionsListGet(botClient, callbackMessage, ActionType.Exploring, cancellationToken);
-        //                            return;
-        //                        case GameMenu.ActionInfo:
-        //                            ActionInfo(botClient, callbackMessage, string.Join(' ', callback[2..]), cancellationToken);
-        //                            return;
-        //                        case GameMenu.StartAction:
-        //                            if (!Events.Any(x => x.Username == "System" && x.TimerName == "RadAwayBlessing")) StartRadAwayBlessingEvent(botClient, callbackMessage, cancellationToken);
-        //                            StartAction(botClient, update.CallbackQuery, update.CallbackQuery.Data.Replace("1_2_", ""), cancellationToken);
-        //                            return;
-        //                        case GameMenu.Inventory:
-        //                            if (callback.Length >= 3)
-        //                            {
-        //                                switch ((CharacterInventory)Enum.Parse(typeof(CharacterInventory), callback[2]))
-        //                                {
-        //                                    case CharacterInventory.Chemicals:
-        //                                        if (callback.Length >= 4)
-        //                                        {
-        //                                            if (callback.Length >= 5)
-        //                                            {
-        //                                                switch ((InventoryUsage)Enum.Parse(typeof(InventoryUsage), callback[4]))
-        //                                                {
-        //                                                    case InventoryUsage.Use:
-        //                                                        UseChemical(botClient, update.CallbackQuery, (ChemicalsInfo)Enum.Parse(typeof(ChemicalsInfo), callback[3]), cancellationToken);
-        //                                                        break;
-        //                                                    case InventoryUsage.Give:
-        //                                                        break;
-        //                                                    case InventoryUsage.Sell:
-        //                                                        break;
-        //                                                    case InventoryUsage.Drop:
-        //                                                        break;
-        //                                                    default:
-        //                                                        break;
-        //                                                }
-        //                                            }
-        //                                            else GetChemicalInfo(botClient, update.CallbackQuery, (ChemicalsInfo)Enum.Parse(typeof(ChemicalsInfo), callback[3]), cancellationToken);
-        //                                        }
-        //                                        else GetInvChemicals(botClient, update.CallbackQuery, cancellationToken);
-        //                                        break;
-        //                                    case CharacterInventory.Junk:
-        //                                        GetInvJunk(botClient, update.CallbackQuery, cancellationToken);
-        //                                        break;
-        //                                    case CharacterInventory.Ammo:
-        //                                        break;
-        //                                    case CharacterInventory.Weapons:
-        //                                        break;
-        //                                    case CharacterInventory.Armor:
-        //                                        break;
-        //                                    case CharacterInventory.Clothes:
-        //                                        break;
-        //                                    default:
-        //                                        GetCharacterInventory(botClient, update.CallbackQuery, cancellationToken);
-        //                                        break;
-        //                                }
-        //                            }
-        //                            else GetCharacterInventory(botClient, update.CallbackQuery, cancellationToken);
-        //                            return;
-        //                        case GameMenu.Characteristics:
-        //                            InlineKeyboardMarkup inlineKeyboard = new InlineKeyboardMarkup(new[] { InlineKeyboardButton.WithCallbackData("Назад", $"{(int)MainShedule.MainMenu}_{(int)MainMenu.Character}") });
-        //                            await botClient.EditMessageTextAsync(update.CallbackQuery.Message.Chat.Id, update.CallbackQuery.Message.MessageId, await CharactersController.GetCharacterAttributesInfo(update.CallbackQuery.From.Username), Telegram.Bot.Types.Enums.ParseMode.Markdown, null, null, inlineKeyboard, cancellationToken);
-        //                            return;
-        //                        case GameMenu.CharacterSettings:
-        //                            CharacterSettings(botClient, callbackMessage, cancellationToken);
-        //                            return;
-        //                        default:
-        //                            await botClient.DeleteMessageAsync(callbackMessage.Chat.Id, callbackMessage.MessageId);
-        //                            Message msg = callbackMessage;
-        //                            msg.MessageId--;
-        //                            return;
-        //                    }
+            }
+        }
 
-        //                // Системные настройки и заведение новых данных (с правами доступа)
-        //                case MainShedule.SettingsMenu:
-        //                    switch ((SettingsMenu)Enum.Parse(typeof(SettingsMenu), callback[1]))
-        //                    {
-        //                        case SettingsMenu.Settings:
-        //                            if (BaseController.CheckPermissions(update.CallbackQuery.From.Username, PermissionsType.Moderator).Result)
-        //                                Settings(botClient, callbackMessage, cancellationToken);
-        //                            return;
-        //                        case SettingsMenu.NewPerk:
-        //                            if (BaseController.CheckPermissions(update.CallbackQuery.From.Username, PermissionsType.Moderator).Result)
-        //                                _ = botClient.SendTextMessageAsync(callbackMessage.Chat.Id, "/newPerk название ключевой_аттрибут стоимость тип описание");
-        //                            return;
-        //                        case SettingsMenu.NewEffect:
-        //                            if (BaseController.CheckPermissions(update.CallbackQuery.From.Username, PermissionsType.Moderator).Result)
-        //                                _ = botClient.SendTextMessageAsync(callbackMessage.Chat.Id, "/newEffect waitForIt", Telegram.Bot.Types.Enums.ParseMode.Markdown);
-        //                            return;
-        //                        case SettingsMenu.NewAction:
-        //                            if (BaseController.CheckPermissions(update.CallbackQuery.From.Username, PermissionsType.Moderator).Result)
-        //                                _ = botClient.SendTextMessageAsync(callbackMessage.Chat.Id, "/newAction название Exploring/Trading/Fight продолжительность в минутах");
-        //                            return;
-        //                    }
-        //                    return;
+        private static async void CreateNewCharacter(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
+        {
+            try
+            {
+                RequestData<Message> requestData = new RequestData<Message>() { Data = message };
+                ResponseData<Character> responseData = await CharactersController.CreateNewCharacter(requestData);
+                Character createdCharacter = new Character();
+                if (!responseData.IsError) createdCharacter = responseData.Data;
+                else throw new Exception(responseData.ErrorText);
 
-        //                default:
-        //                    return;
-        //            }
-        //        }
-        //    }
-        //    catch (Exception)
-        //    {
+                string result = $"Создан персонаж: {createdCharacter.Name}\r\n" +
+                            $"Id: {createdCharacter.Id}\r\n" +
+                            $"SPECIALsId: {createdCharacter.SPECIALsId}";
 
-        //    }
-        //}
+                await botClient.SendTextMessageAsync(
+                        chatId: message.Chat.Id,
+                        text: result,
+                        parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
+                        cancellationToken: cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                await botClient.SendTextMessageAsync(
+                        chatId: message.Chat.Id,
+                        text: ex.Message,
+                        parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
+                        cancellationToken: cancellationToken);
+            }
+        }
+
+        string str = $"Описание характеристик:\r\n" +
+                                $"{Emoji.Muscle} *Сила (Strength)* - переносимый вес, урон тяжелого оружия и урон в ближнем бою.\r\n" +
+                                $"{Emoji.Eye} *Восприятие (Perception)* - меткость и внимательность.\r\n" +
+                                $"{Emoji.Lungs} *Выносливость (Endurance)* - здоровье и стойкость.\r\n" +
+                                $"{Emoji.SpeakingHead} *Харизма (Charisma)* - торговля и общение.\r\n" +
+                                $"{Emoji.Brain} *Интеллект (Intellegence)* - модификация оружия, получаемый опыт и крафт.\r\n" +
+                                $"{Emoji.Leg} *Ловкость (Agility)* - урон в дальнем бою, скрытность и очки действия (ОД).\r\n" +
+                                $"{Emoji.Clover} *Удача (Luck)* - криты, находимый хлам, везение.";
 
         //public static async void Menu(ITelegramBotClient botClient, long chatId, string username, CancellationToken cancellationToken)
         //{
@@ -863,12 +817,12 @@ namespace HITteamBot
         //    }
         //}
 
-        //public static async Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
-        //{
-        //    Console.WriteLine($"{DateTime.Now.ToString("HH:mm:ss")}\t{exception.Message}");
-        //    await Task.Delay(190000);
-        //    Main(null);
-        //}
+        public static async Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
+        {
+            Console.WriteLine($"{DateTime.Now.ToString("HH:mm:ss")}\t{exception.Message}");
+            await Task.Delay(190000);
+            Main(null);
+        }
     }
 
     #region Схема перехода меню
