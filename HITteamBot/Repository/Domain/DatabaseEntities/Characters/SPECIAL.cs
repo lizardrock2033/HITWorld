@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
 
-namespace HITteamBot.Repository.Entities.Characters
+namespace HITteamBot.Repository.Domain.DatabaseEntities.Characters
 {
     public class SPECIAL
     {

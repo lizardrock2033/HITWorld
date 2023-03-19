@@ -1,8 +1,7 @@
-﻿using HITteamBot.Repository.Entities.Characters;
-using HITteamBot.Repository.Entities.Items.Equipment;
-using HITteamBot.Repository.Entities.Items.Chemicals;
-using HITteamBot.Repository.Entities.Items.Ammo;
-using HITteamBot.Repository.Entities.Items.Junk;
+﻿using HITteamBot.Repository.Domain.DatabaseEntities.Characters;
+using HITteamBot.Repository.Domain.DatabaseEntities.Items.Chemicals;
+using HITteamBot.Repository.Domain.DatabaseEntities.Items.Ammo;
+using HITteamBot.Repository.Domain.DatabaseEntities.Items.Junk;
 using HITteamBot.Repository.Entities.Locations;
 using HITteamBot.Repository.Entities.Base;
 using Newtonsoft.Json;
@@ -20,13 +19,222 @@ using HITteamBot.Repository.Entities.Actions;
 using HITteamBot.Repository.Domain;
 using HITteamBot.Repository.Entities;
 using HITteamBot.Repository.Domain.Helpers.Characters;
+using HITteamBot.Repository.Entities.Characters;
+using System.Reflection;
 
 namespace HITteamBot.Repository.Controllers.Characters
 {
     public class CharactersController
     {
         #region Создание персонажа
-        public static async Task<ResponseData<Character>> CreateNewCharacter(RequestData<Message> requestData)
+        public static async void CreateNewCharacter(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken, List<CharacterData> CharacterDatas)
+        {
+            try
+            {
+                _ = botClient.SendTextMessageAsync(
+                        chatId: message.Chat.Id,
+                        text: $"Так, _{message.From.FirstName}_, сейчас проверю, есть ли у нас свободная койка для еще одного поселенца. Скоро вернусь.",
+                        parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
+                        cancellationToken: cancellationToken);
+
+                RequestData<Message> requestData = new RequestData<Message>() { Data = message };
+                ResponseData<Character> responseData = await SaveNewCharacter(requestData);
+                Character createdCharacter = new Character();
+                if (!responseData.IsError) createdCharacter = responseData.Data;
+                else throw new Exception(responseData.ErrorText);
+
+                CharacterData characterData = new CharacterData()
+                {
+                    UserId = message.From.Id,
+                    ChatId = message.Chat.Id,
+                    CharacterId = createdCharacter.Id,
+                    SkillPoints = 22,
+                    SPECIAL = new SPECIAL()
+                    {
+                        Id = createdCharacter.SPECIALsId,
+                        Strength = 1,
+                        Perception = 1,
+                        Endurance = 1,
+                        Charisma = 1,
+                        Intellegence = 1,
+                        Agility = 1,
+                        Luck = 1,
+                        IsSet = false
+                    }
+                };
+                CharacterDatas.Add(characterData);
+
+                string text = $"Нашел свободное местечко. Так что добро пожаловать в Сэнкчуари Хиллз {Emoji.Settlement}!\r\n" +
+                                    $"Но прежде чем присоединиться к поселению, [{message.From.FirstName}](tg://user?id={message.From.Id}), заполни анктету, чтобы я мог понять будет ли нам польза от твоих навыков.\r\n\r\n" +
+                                    $"{Emoji.Rosette} Очков:  _{characterData.SkillPoints}_";
+
+                InlineKeyboardMarkup inlineKeyboard = GetInlineStats(characterData);
+
+                await botClient.SendTextMessageAsync(
+                        chatId: message.Chat.Id,
+                        text: text,
+                        replyMarkup: inlineKeyboard,
+                        parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
+                        cancellationToken: cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                await botClient.SendTextMessageAsync(
+                        chatId: message.Chat.Id,
+                        text: ex.Message,
+                        parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
+                        cancellationToken: cancellationToken);
+            }
+        }
+
+        public static async void ChangeStats(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken, SPECIALs stat, BasicCommands act, List<CharacterData> CharacterDatas)
+        {
+            try
+            {
+                CharacterData characterData = CharacterDatas.Where(m => m.ChatId == callbackQuery.Message.Chat.Id && m.UserId == callbackQuery.From.Id).FirstOrDefault();
+                if (characterData == null) throw new Exception("Кажется, я где то потерял твою анкету, приятель...");
+                if (characterData.SkillPoints <= 0 && act == BasicCommands.Add) return;
+                PropertyInfo field = typeof(SPECIAL).GetProperty(stat.ToString());
+                short value = (short)field.GetValue(characterData.SPECIAL);
+                if (value + (short)(act == BasicCommands.Add ? 1 : -1) > 10 || value + (short)(act == BasicCommands.Add ? 1 : -1) <= 0) return;
+                value += (short)(act == BasicCommands.Add ? 1 : -1);
+                field.SetValue(characterData.SPECIAL, value);
+                characterData.SkillPoints += (short)(act == BasicCommands.Add ? -1 : 1);
+
+                string text = $"Нашел свободное местечко. Так что добро пожаловать в Сэнкчуари Хиллз {Emoji.Settlement}!\r\n" +
+                                    $"Но прежде чем присоединиться к поселению, [{callbackQuery.From.FirstName}](tg://user?id={callbackQuery.From.Id}), заполни анктету, чтобы я мог понять будет ли нам польза от твоих навыков.\r\n\r\n" +
+                                    $"{Emoji.Rosette} Очков:  _{characterData.SkillPoints}_";
+
+                await botClient.EditMessageTextAsync(
+                            chatId: callbackQuery.Message.Chat.Id,
+                            messageId: callbackQuery.Message.MessageId,
+                            text: text,
+                            parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
+                            replyMarkup: GetInlineStats(characterData),
+                            cancellationToken: cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                await botClient.SendTextMessageAsync(
+                        chatId: callbackQuery.Message.Chat.Id,
+                        text: ex.Message,
+                        parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
+                        cancellationToken: cancellationToken);
+            }
+        }
+
+        public static async void SaveStats(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken, List<CharacterData> CharacterDatas)
+        {
+            try
+            {
+                CharacterData characterData = CharacterDatas.Where(m => m.ChatId == callbackQuery.Message.Chat.Id && m.UserId == callbackQuery.From.Id).FirstOrDefault();
+                if (characterData == null) throw new Exception("Кажется, я где то потерял твою анкету, приятель...");
+                if (characterData.SkillPoints != 0) throw new Exception($"Хэй, [{callbackQuery.From.FirstName}](tg://user?id={callbackQuery.From.Id}), заполни анкету до конца, я уверен ты способен на большее.");
+                characterData.SPECIAL.IsSet = true;
+
+                RequestData<SPECIAL> requestData = new RequestData<SPECIAL>() { Data = characterData.SPECIAL };
+                ResponseData<int> responseData = await SaveCharacterStats(requestData);
+                if (responseData.IsError) throw new Exception(responseData.ErrorText);
+
+                await botClient.SendTextMessageAsync(
+                            chatId: callbackQuery.Message.Chat.Id,
+                            text: $"Отлично, [{callbackQuery.From.FirstName}](tg://user?id={callbackQuery.From.Id})! На этом всё. Хотя постой, забыл самое главное...\r\n" +
+                                    $"Как мне тебя называть? Здесь у тебя начнется новая жизнь, неплохо было бы подобрать новое имя.",
+                            parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
+                            cancellationToken: cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                await botClient.SendTextMessageAsync(
+                        chatId: callbackQuery.Message.Chat.Id,
+                        text: ex.Message,
+                        parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
+                        cancellationToken: cancellationToken);
+            }
+        }
+
+        public static async void GetStatsInfo(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await botClient.SendTextMessageAsync(
+                        chatId: callbackQuery.Message.Chat.Id,
+                        text: $"Описание характеристик:\r\n" +
+                                $"{Emoji.Muscle} *Сила (Strength)* - переносимый вес, урон тяжелого оружия и урон в ближнем бою.\r\n" +
+                                $"{Emoji.Eye} *Восприятие (Perception)* - меткость и внимательность.\r\n" +
+                                $"{Emoji.Lungs} *Выносливость (Endurance)* - здоровье и стойкость.\r\n" +
+                                $"{Emoji.SpeakingHead} *Харизма (Charisma)* - торговля и общение.\r\n" +
+                                $"{Emoji.Brain} *Интеллект (Intellegence)* - модификация оружия, получаемый опыт и крафт.\r\n" +
+                                $"{Emoji.Leg} *Ловкость (Agility)* - урон в дальнем бою, скрытность и очки действия (ОД).\r\n" +
+                                $"{Emoji.Clover} *Удача (Luck)* - криты, находимый хлам, везение.",
+                        parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
+                        cancellationToken: cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                await botClient.SendTextMessageAsync(
+                        chatId: callbackQuery.Message.Chat.Id,
+                        text: ex.Message,
+                        parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
+                        cancellationToken: cancellationToken);
+            }
+        }
+
+        public static InlineKeyboardMarkup GetInlineStats(CharacterData characterData)
+        {
+            return new InlineKeyboardMarkup(new[] {
+                    new[]
+                    {
+                        InlineKeyboardButton.WithCallbackData("-", $"{characterData.UserId}_{(int)MainShedule.GameMenu}_{(int)GameMenu.Statistics}_{(int)SPECIALs.Strength}_{(int)BasicCommands.Deny}"),
+                        InlineKeyboardButton.WithCallbackData($"{Emoji.Muscle} СИЛ: {characterData.SPECIAL.Strength}", "empty"),
+                        InlineKeyboardButton.WithCallbackData("+", $"{characterData.UserId}_{(int)MainShedule.GameMenu}_{(int)GameMenu.Statistics}_{(int)SPECIALs.Strength}_{(int)BasicCommands.Add}")
+                    },
+                    new[]
+                    {
+                        InlineKeyboardButton.WithCallbackData("-", $"{characterData.UserId}_{(int)MainShedule.GameMenu}_{(int)GameMenu.Statistics}_{(int)SPECIALs.Perception}_{(int)BasicCommands.Deny}"),
+                        InlineKeyboardButton.WithCallbackData($"{Emoji.Eye} ВСП: {characterData.SPECIAL.Perception}", "empty"),
+                        InlineKeyboardButton.WithCallbackData("+", $"{characterData.UserId}_{(int)MainShedule.GameMenu}_{(int)GameMenu.Statistics}_{(int)SPECIALs.Perception}_{(int)BasicCommands.Add}")
+                    },
+                    new[]
+                    {
+                        InlineKeyboardButton.WithCallbackData("-", $"{characterData.UserId}_{(int)MainShedule.GameMenu}_{(int)GameMenu.Statistics}_{(int)SPECIALs.Endurance}_{(int)BasicCommands.Deny}"),
+                        InlineKeyboardButton.WithCallbackData($"{Emoji.Lungs} ВЫН: {characterData.SPECIAL.Endurance}", "empty"),
+                        InlineKeyboardButton.WithCallbackData("+", $"{characterData.UserId}_{(int)MainShedule.GameMenu}_{(int)GameMenu.Statistics}_{(int)SPECIALs.Endurance}_{(int)BasicCommands.Add}")
+                    },
+                    new[]
+                    {
+                        InlineKeyboardButton.WithCallbackData("-", $"{characterData.UserId}_{(int)MainShedule.GameMenu}_{(int)GameMenu.Statistics}_{(int)SPECIALs.Charisma}_{(int)BasicCommands.Deny}"),
+                        InlineKeyboardButton.WithCallbackData($"{Emoji.SpeakingHead} ХАР: {characterData.SPECIAL.Charisma}", "empty"),
+                        InlineKeyboardButton.WithCallbackData("+", $"{characterData.UserId}_{(int)MainShedule.GameMenu}_{(int)GameMenu.Statistics}_{(int)SPECIALs.Charisma}_{(int)BasicCommands.Add}")
+                    },
+                    new[]
+                    {
+                        InlineKeyboardButton.WithCallbackData("-", $"{characterData.UserId}_{(int)MainShedule.GameMenu}_{(int)GameMenu.Statistics}_{(int)SPECIALs.Intellegence}_{(int)BasicCommands.Deny}"),
+                        InlineKeyboardButton.WithCallbackData($"{Emoji.Brain} ИНТ: {characterData.SPECIAL.Intellegence}", "empty"),
+                        InlineKeyboardButton.WithCallbackData("+", $"{characterData.UserId}_{(int)MainShedule.GameMenu}_{(int)GameMenu.Statistics}_{(int)SPECIALs.Intellegence}_{(int)BasicCommands.Add}")
+                    },
+                    new[]
+                    {
+                        InlineKeyboardButton.WithCallbackData("-", $"{characterData.UserId}_{(int)MainShedule.GameMenu}_{(int)GameMenu.Statistics}_{(int)SPECIALs.Agility}_{(int)BasicCommands.Deny}"),
+                        InlineKeyboardButton.WithCallbackData($"{Emoji.Leg} ЛВК: {characterData.SPECIAL.Agility}", "empty"),
+                        InlineKeyboardButton.WithCallbackData("+", $"{characterData.UserId}_{(int)MainShedule.GameMenu}_{(int)GameMenu.Statistics}_{(int)SPECIALs.Agility}_{(int)BasicCommands.Add}")
+                    },
+                    new[]
+                    {
+                        InlineKeyboardButton.WithCallbackData("-", $"{characterData.UserId}_{(int)MainShedule.GameMenu}_{(int)GameMenu.Statistics}_{(int)SPECIALs.Luck}_{(int)BasicCommands.Deny}"),
+                        InlineKeyboardButton.WithCallbackData($"{Emoji.Clover} УДЧ: {characterData.SPECIAL.Luck}", "empty"),
+                        InlineKeyboardButton.WithCallbackData("+", $"{characterData.UserId}_{(int)MainShedule.GameMenu}_{(int)GameMenu.Statistics}_{(int)SPECIALs.Luck}_{(int)BasicCommands.Add}")
+                    },
+                    new[] { InlineKeyboardButton.WithCallbackData($"{Emoji.Check} Принять", $"{characterData.UserId}_{(int)MainShedule.GameMenu}_{(int)GameMenu.Statistics}_{(int)BasicCommands.Save}") },
+                    new[] { InlineKeyboardButton.WithCallbackData($"{Emoji.Info} О характеристиках", $"{characterData.UserId}_{(int)MainShedule.GameMenu}_{(int)GameMenu.Statistics}_{(int)BasicCommands.GetInfo}") }
+            });
+        }
+
+        #endregion
+
+        #region Controller => Helper
+        #region Создание персонажа
+        private static async Task<ResponseData<Character>> SaveNewCharacter(RequestData<Message> requestData)
         {
             ResponseData<Character> responseData = new ResponseData<Character>();
             try
@@ -39,8 +247,7 @@ namespace HITteamBot.Repository.Controllers.Characters
                     Username = message.From.Username
                 };
                 RequestData<Users> requestForNewCharacter = new RequestData<Users>() { Data = user };
-                ResponseData<Character> responseFromCreating = new ResponseData<Character>();
-                await Task.Factory.StartNew(() => { responseFromCreating = CharactersHelper.CreateNewCharacter(requestForNewCharacter); });
+                ResponseData<Character> responseFromCreating = await CharactersHelper.CreateNewCharacter(requestForNewCharacter);
 
                 if (!responseFromCreating.IsError) responseData.Data = responseFromCreating.Data;
                 else throw new Exception(responseFromCreating.ErrorText);
@@ -53,64 +260,53 @@ namespace HITteamBot.Repository.Controllers.Characters
             return responseData;
         }
 
-        //public static async Task<string> SetCharacterAttributes(string query)
-        //{
-        //    try
-        //    {
-        //        string[] strings = query.Trim().Split(new char[] { ' ' });
-        //        string userCharacterDirectory = BaseController.GetUserDirectory(strings[0]) + $"\\Character";
-        //        Character character = await GetCharacter(strings[0]);
-        //        if (character.Characteristics.Attributes.IsSet) return "Вы уже распределили очки характеристик";
+        private static async Task<ResponseData<int>> SaveCharacterStats(RequestData<SPECIAL> requestData)
+        {
+            ResponseData<int> responseData = new ResponseData<int>();
+            try
+            {
+                RequestData<SPECIAL> requestForStatsSaving = new RequestData<SPECIAL>() { Data = requestData.Data };
+                ResponseData<int> responseFromStatsSaving = await CharactersHelper.SetCharacterStats(requestData);
+            }
+            catch (Exception ex)
+            {
+                responseData.IsError = true;
+                responseData.ErrorText = ex.Message;
+            }
+            return responseData;
+        }
 
-        //        if (character.IsActive)
-        //        {
-        //            short sum = 0;
-        //            for (int i = 1; i < 8; i++)
-        //            {
-        //                if (Int16.Parse(strings[i]) > 9) throw new Exception();
-        //                sum += Int16.Parse(strings[i]);
-        //            }
-        //            if (sum != 22) throw new Exception();
+        public static async void SaveCharacterName(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken, List<CharacterData> CharacterDatas)
+        {
+            try
+            {
+                CharacterData characterData = CharacterDatas.Where(m => m.ChatId == callbackQuery.Message.Chat.Id && m.UserId == callbackQuery.From.Id).FirstOrDefault();
+                RequestData<CharacterData> requestData = new RequestData<CharacterData>() { Data = characterData };
+                ResponseData<int> responseData = await CharactersHelper.SetCharacterName(requestData);
+                if (responseData.IsError) throw new Exception(responseData.ErrorText);
 
-        //            character.Characteristics = new Characteristics()
-        //            {
-        //                Attributes = new SPECIAL()
-        //                {
-        //                    Strength = (short)(Int16.Parse(strings[1]) + 1),
-        //                    Perception = (short)(Int16.Parse(strings[2]) + 1),
-        //                    Endurance = (short)(Int16.Parse(strings[3]) + 1),
-        //                    Charisma = (short)(Int16.Parse(strings[4]) + 1),
-        //                    Intellegence = (short)(Int16.Parse(strings[5]) + 1),
-        //                    Agility = (short)(Int16.Parse(strings[6]) + 1),
-        //                    Luck = (short)(Int16.Parse(strings[7]) + 1),
-        //                    IsSet = true
-        //                }
-        //            };
+                string text = $"Ну что ж, [{characterData.CharacterName}](tg://user?id={callbackQuery.From.Id}), приветствую тебя в Сэнкчуари, мой друг! Удачи в приключениях! " +
+                                    $"Как освоишься тут, мне потребуется твоя помощь с одним поселением.";
+                CharacterDatas.Remove(characterData);
 
-        //            character.Characteristics.Health = character.Characteristics.CurrentHealth = 100 + 10 * character.Characteristics.Attributes.Endurance;
-        //            character.Characteristics.ActionPoints = character.Characteristics.CurrentAP = 100 + 10 * character.Characteristics.Attributes.Agility;
-        //            character.Characteristics.WeightLimit = (short)(100 + 5 * character.Characteristics.Attributes.Strength);
-        //            character.Characteristics.CurrentWL = 0;
-        //            character.Characteristics.Experience = 0;
-        //            character.Characteristics.NextLevelOn = 500;
-        //            character.Characteristics.Rads = 0;
-        //            character.Characteristics.RadContamination = RadContamination.Clear;
+                await botClient.SendTextMessageAsync(
+                        chatId: callbackQuery.Message.Chat.Id,
+                        text: text,
+                        parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
+                        cancellationToken: cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                await botClient.SendTextMessageAsync(
+                        chatId: callbackQuery.Message.Chat.Id,
+                        text: ex.Message,
+                        parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
+                        cancellationToken: cancellationToken);
+            }
+        }
+        #endregion
 
-        //            if (SaveCharacter(character))
-        //            {
-        //                return await GetCharacterFullInfo(strings[0]);
-        //            }
-        //            return "Ошибка";
-        //        }
-        //        else return "Персонаж не найден";
-        //    }
-        //    catch (Exception)
-        //    {
-        //        return "Правильно распределите очки! 22 свободных очка характеристик, характеристики не могут превышать 10.";
-        //    }
-        //}
-
-        //#endregion
+        #endregion
 
         //#region Настройки персонажа
         //public static async Task<string> SetCharacterAvatar(string query)
@@ -386,7 +582,5 @@ namespace HITteamBot.Repository.Controllers.Characters
         //    }
         //    return character;
         //}
-
-        #endregion
     }
 }

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace HITteamBot.Repository.Entities.Experience
+namespace HITteamBot.Repository.Domain.DatabaseEntities.Experience
 {
     public class Expline
     {

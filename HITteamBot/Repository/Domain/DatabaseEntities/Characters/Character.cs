@@ -4,7 +4,7 @@ using System.Text;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 
-namespace HITteamBot.Repository.Entities.Characters
+namespace HITteamBot.Repository.Domain.DatabaseEntities.Characters
 {
     public class Character
     {

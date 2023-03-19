@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace HITteamBot.Repository.Entities.Items.Ammo
+namespace HITteamBot.Repository.Domain.DatabaseEntities.Items.Ammo
 {
     public class Bullets
     {

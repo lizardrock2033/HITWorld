@@ -61,5 +61,9 @@ namespace HITteamBot.Repository.Entities.Base
         public readonly static string Rocket = "🖌";
         public readonly static string Battary = "🔋";
         public readonly static string Bullet = "🏮";
+        public readonly static string Check = "✅";
+        public readonly static string Info = "ℹ️";
+        public readonly static string Settlement = "🏘";
+        public readonly static string X = "❌";
     }
 }

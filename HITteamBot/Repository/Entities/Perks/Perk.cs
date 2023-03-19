@@ -1,4 +1,5 @@
-﻿using HITteamBot.Repository.Entities.Characters;
+﻿using HITteamBot.Repository.Domain.DatabaseEntities.Characters;
+using HITteamBot.Repository.Entities.Characters;
 using HITteamBot.Repository.Entities.Perks;
 using System;
 using System.Collections.Generic;

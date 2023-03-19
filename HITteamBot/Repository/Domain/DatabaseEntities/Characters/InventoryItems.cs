@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace HITteamBot.Repository.Entities.Characters
+namespace HITteamBot.Repository.Domain.DatabaseEntities.Characters
 {
     public class InventoryItems
     {

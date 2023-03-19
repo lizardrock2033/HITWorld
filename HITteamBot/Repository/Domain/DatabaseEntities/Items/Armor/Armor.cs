@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace HITteamBot.Repository.Entities.Items.Armor
+namespace HITteamBot.Repository.Domain.DatabaseEntities.Items.Armor
 {
     public class Armor
     {

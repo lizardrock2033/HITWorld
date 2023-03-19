@@ -2,12 +2,11 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace HITteamBot.Repository.Entities.Items.Ammo
+namespace HITteamBot.Repository.Domain.DatabaseEntities.Items.Weapons
 {
-    public class Ammo
+    public class WeaponTypes
     {
         public short Id { get; set; }
-        public short TypeId { get; set; }
         public string Name { get; set; }
     }
 }

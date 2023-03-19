@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace HITteamBot.Repository.Entities.Items.Weapons
+namespace HITteamBot.Repository.Domain.DatabaseEntities.Items.Chemicals
 {
-    public class WeaponTypes
+    public class Chemicals
     {
         public short Id { get; set; }
         public string Name { get; set; }
